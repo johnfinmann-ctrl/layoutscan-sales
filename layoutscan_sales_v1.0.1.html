@@ -1,0 +1,3630 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LayoutScan Sales v1.0.1 — Review Fixes · Nordic Operations · Reoler A/S</title>
+<style>
+  :root{
+    --navy:#0B1E33;
+    --navy-deep:#071527;
+    --navy-mid:#132A45;
+    --white:#FFFFFF;
+    --gray-bg:#EEF1F4;
+    --gray-canvas:#F5F7F9;
+    --border:#D7DEE6;
+    --border-strong:#B9C4CF;
+    --green:#3A9D5D;
+    --green-dark:#2C7A47;
+    --text:#1B2733;
+    --text-mute:#5B6B7A;
+    --danger:#C0392B;
+    --warn:#E1A73C;
+    --accent2:#E67E22;
+    --gold:#C8A96E;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--text); background:var(--gray-bg);
+    overflow:hidden;
+  }
+  button{font-family:inherit; cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  ::-webkit-scrollbar{width:9px; height:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:6px;}
+
+  /* ================= START SCREEN ================= */
+  #startScreen{
+    position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+  }
+  .start-card{
+    width:min(760px, 92vw); background:var(--white); border-radius:18px; padding:44px 46px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  }
+  .start-logo{font-size:12px; letter-spacing:1.5px; color:var(--text-mute); text-transform:uppercase; font-weight:700;}
+  .start-title{font-size:32px; font-weight:800; color:var(--navy); margin:6px 0 2px;}
+  .start-sub{font-size:15px; color:var(--text-mute); margin-bottom:26px;}
+  .start-progress{display:flex; align-items:center; gap:6px; margin-bottom:30px; flex-wrap:wrap;}
+  .start-progress span{font-size:11.5px; color:var(--text-mute); font-weight:600; padding:4px 10px; background:var(--gray-canvas); border-radius:20px;}
+  .start-progress .arrow{color:var(--border-strong);}
+  .start-choices{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  .start-choice{
+    border:1.5px solid var(--border); border-radius:12px; padding:20px 16px; text-align:left;
+    background:var(--gray-canvas); transition:.15s; display:flex; flex-direction:column; gap:6px;
+  }
+  .start-choice:hover{border-color:var(--green); background:#F2FBF5; transform:translateY(-1px);}
+  .start-choice .ic{font-size:22px;}
+  .start-choice .t{font-weight:700; font-size:14.5px; color:var(--navy);}
+  .start-choice .d{font-size:11.5px; color:var(--text-mute); line-height:1.4;}
+  .start-footer{margin-top:26px; font-size:11px; color:var(--text-mute); text-align:center;}
+
+  /* ================= WIZARD SHELL ================= */
+  #wizard{position:fixed; inset:0; display:none; flex-direction:column; background:var(--gray-bg); z-index:20;}
+  #wizard.active{display:flex;}
+  .wiz-header{
+    background:var(--navy); color:#fff; padding:14px 26px; display:flex; align-items:center; justify-content:space-between; flex:0 0 auto;
+  }
+  .wiz-brand{font-weight:800; font-size:15px; display:flex; align-items:center; gap:10px;}
+  .wiz-brand small{font-weight:500; color:#9FB3C8; font-size:11px;}
+  .wiz-steps{display:flex; gap:4px; align-items:center;}
+  .wiz-step{
+    font-size:11px; font-weight:700; padding:6px 12px; border-radius:16px; color:#9FB3C8; background:rgba(255,255,255,.06);
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .wiz-step.done{background:rgba(58,157,93,.22); color:#8FE3AC;}
+  .wiz-step.active{background:var(--green); color:#fff;}
+  .wiz-actions-top{display:flex; gap:8px;}
+  .wiz-body{flex:1 1 auto; overflow:auto; padding:30px 0 90px;}
+  .wiz-inner{max-width:820px; margin:0 auto; padding:0 30px;}
+  .wiz-inner.wide{max-width:1200px;}
+  .wiz-h1{font-size:22px; font-weight:800; color:var(--navy); margin:0 0 4px;}
+  .wiz-h1 .step-no{color:var(--green); margin-right:8px;}
+  .wiz-lead{font-size:13px; color:var(--text-mute); margin:0 0 24px;}
+  .wiz-footer{
+    position:fixed; left:0; right:0; bottom:0; background:var(--white); border-top:1px solid var(--border);
+    padding:14px 26px; display:flex; justify-content:space-between; align-items:center; z-index:21;
+  }
+  .card{background:var(--white); border:1px solid var(--border); border-radius:12px; padding:22px 24px; margin-bottom:16px;}
+  .card-title{font-weight:700; font-size:13.5px; color:var(--navy); margin:0 0 14px; display:flex; align-items:center; gap:8px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px 16px;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:11.5px; font-weight:700; color:var(--text-mute); text-transform:uppercase; letter-spacing:.3px;}
+  .field label .opt{text-transform:none; font-weight:500; color:#9AA7B2; letter-spacing:0;}
+  .field input, .field select, .field textarea{
+    border:1.5px solid var(--border); border-radius:8px; padding:10px 11px; font-size:13.5px; color:var(--text); background:#fff;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--green);}
+  .field.required label::after{content:" *"; color:var(--danger);}
+  .field-full{grid-column:1/-1;}
+
+  .btn{
+    border:1.5px solid var(--border-strong); background:#fff; color:var(--navy); font-weight:700; font-size:13px;
+    padding:11px 20px; border-radius:9px; display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn:hover{border-color:var(--navy);}
+  .btn.primary{background:var(--green); border-color:var(--green); color:#fff;}
+  .btn.primary:hover{background:var(--green-dark); border-color:var(--green-dark);}
+  .btn.ghost{border-color:transparent; background:transparent; color:var(--text-mute);}
+  .btn.danger{color:var(--danger); border-color:var(--danger);}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn.small{padding:7px 12px; font-size:12px;}
+
+  .choice-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px;}
+  .choice-tile{
+    border:1.5px solid var(--border); border-radius:10px; padding:14px 12px; text-align:center; background:#fff;
+    font-size:12.5px; font-weight:700; color:var(--navy); display:flex; flex-direction:column; align-items:center; gap:6px;
+    transition:border-color .12s, background .12s, transform .1s;
+  }
+  .choice-tile:hover{border-color:var(--border-strong); transform:translateY(-1px);}
+  .choice-tile .ic{font-size:20px;}
+  .choice-tile.sel{border-color:var(--green); background:#F2FBF5; box-shadow:0 0 0 2px rgba(58,157,93,.25) inset;}
+  .choice-tile .sub{font-size:10.5px; font-weight:500; color:var(--text-mute);}
+
+  /* Reolkort — ca. 20% større, tydeligere ikon og tekst, så det er let at vælge sammen med kunden */
+  .choice-grid.rack-grid{grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;}
+  .choice-tile.rack-tile{padding:18px 15px; gap:8px; font-size:15px;}
+  .choice-tile.rack-tile .ic{font-size:26px;}
+  .choice-tile.rack-tile .sub{font-size:12px;}
+
+  /* Truckkort — design bevaret, men gangbredden er den vigtigste information og vises stort */
+  .choice-tile.truck-tile{padding:16px 12px;}
+  .choice-tile.truck-tile .aisle-value{font-size:22px; font-weight:800; color:var(--green-dark); line-height:1;}
+  .choice-tile.truck-tile .aisle-label{font-size:9.5px; color:var(--text-mute); text-transform:uppercase; letter-spacing:.3px; font-weight:600;}
+  .choice-tile.truck-tile .truck-name{font-size:12.5px; font-weight:700; color:var(--navy);}
+  .choice-tile.truck-tile.secondary-truck{padding:11px 10px;}
+  .choice-tile.truck-tile.secondary-truck .aisle-value{font-size:15px;}
+
+  /* Reolmål pr. aktiv type (blandede reolsystemer) */
+  .rack-measure-row{border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:12px; background:var(--gray-canvas);}
+  .rack-measure-row:last-child{margin-bottom:0;}
+  .rack-measure-title{font-weight:700; color:var(--navy); font-size:13.5px; margin-bottom:10px;}
+
+  .toolstrip{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+  .toolchip{
+    border:1.5px solid var(--border); background:#fff; border-radius:9px; padding:9px 12px; font-size:12px; font-weight:700;
+    display:flex; align-items:center; gap:7px; color:var(--navy);
+  }
+  .toolchip:hover{border-color:var(--navy);}
+  .toolchip.armed{border-color:var(--green); background:#F2FBF5; box-shadow:0 0 0 2px rgba(58,157,93,.25) inset;}
+  .toolchip .sw{width:14px; height:14px; border-radius:3px; border:1px solid rgba(0,0,0,.2);}
+
+  .hallSummary{display:flex; gap:22px; flex-wrap:wrap; margin-top:14px;}
+  .hallSummary .kv{font-size:12px; color:var(--text-mute);}
+  .hallSummary .kv b{display:block; font-size:17px; color:var(--navy); font-weight:800;}
+
+  /* ================= LAYOUT (TRIN 5) ================= */
+  #layoutScreen{position:fixed; inset:0; display:none; flex-direction:column; z-index:20; background:var(--gray-bg);}
+  #layoutScreen.active{display:flex;}
+  .lay-top{
+    background:var(--navy); color:#fff; padding:9px 16px; display:flex; align-items:center; gap:10px; flex:0 0 auto; flex-wrap:wrap;
+  }
+  .lay-top .grp{display:flex; align-items:center; gap:6px; padding-right:10px; border-right:1px solid rgba(255,255,255,.15);}
+  .lay-top .grp:last-child{border-right:none;}
+  .tbtn{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); color:#fff; border-radius:7px;
+    padding:7px 11px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px;
+    transition:background .15s, border-color .15s, transform .1s;
+  }
+  .tbtn:hover{background:rgba(255,255,255,.16);}
+  .tbtn:active{transform:translateY(1px);}
+  .tbtn.active{background:var(--green); border-color:var(--green);}
+  .tbtn.on{background:var(--green); border-color:var(--green);}
+  .tbtn.danger{background:rgba(192,57,43,.25); border-color:rgba(192,57,43,.4);}
+  /* Primær handling = altid grøn og tydelig; sekundær = mørk/rolig */
+  .tbtn.primary{background:var(--green); border-color:var(--green); font-weight:700; box-shadow:0 2px 6px rgba(58,157,93,.35);}
+  .tbtn.primary:hover{background:var(--green-dark); border-color:var(--green-dark);}
+  .tbtn.secondary{background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.12); color:#C7D4E1;}
+  .lay-main{flex:1 1 auto; display:grid; grid-template-columns:186px 1fr 226px; overflow:hidden;}
+  .lay-palette{position:relative; background:#fff; border-right:1px solid var(--border); overflow:auto; padding:10px;}
+  .toggle-panel-btn{ display:none; }
+  .panel-close-btn{ display:none; }
+  .panel-backdrop{ display:none; }
+
+  /* ================= RESPONSIVT: TABLET/IPAD (≤900px) ================= */
+  @media (max-width: 900px){
+    .toggle-panel-btn{ display:inline-flex; }
+    .lay-main{ grid-template-columns: 1fr; }
+    .lay-palette, .lay-props-wrap{
+      position:fixed; top:0; bottom:0; width:min(82vw, 320px); z-index:45;
+      box-shadow:0 0 28px rgba(7,21,39,.28); transition:transform .22s ease;
+    }
+    .lay-palette{ left:0; transform:translateX(-105%); }
+    .lay-palette.panel-open{ transform:translateX(0); }
+    .lay-props-wrap{ right:0; transform:translateX(105%); }
+    .lay-props-wrap.panel-open{ transform:translateX(0); }
+    .panel-close-btn{
+      display:flex; align-items:center; justify-content:center; position:absolute; top:8px; right:8px; z-index:2;
+      width:32px; height:32px; border-radius:8px; border:1px solid var(--border); background:var(--gray-canvas);
+      font-size:15px; color:var(--text-mute);
+    }
+    .panel-backdrop{
+      position:fixed; inset:0; background:rgba(7,21,39,.35); z-index:44;
+    }
+    .panel-backdrop.active{ display:block; }
+    .resultbar{ gap:16px; padding:10px 14px; }
+    .wiz-inner{ max-width:100%; }
+  }
+
+  /* ================= RESPONSIVT: MOBIL (≤640px) ================= */
+  @media (max-width: 640px){
+    .grid2, .grid3{ grid-template-columns: 1fr; }
+    .start-choices{ grid-template-columns: 1fr; }
+    .wiz-inner{ padding:0 16px; }
+    .wiz-header{ padding:12px 14px; flex-wrap:wrap; gap:8px; }
+    .wiz-steps{ order:3; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .wiz-footer{ padding:12px 14px; }
+    .btn{ padding:12px 18px; font-size:13.5px; }
+    .lay-top{ padding:8px 10px; gap:6px; }
+    .lay-top .grp{ padding-right:6px; }
+    .tbtn{ padding:8px 10px; font-size:11.5px; }
+    .resultbar{ gap:12px; padding:10px; }
+    .resultbar .rb-item b{ font-size:15px; }
+    .res-wrap{ padding:0 14px; }
+    .start-card{ padding:28px 22px; }
+  }
+  .lay-palette h4{font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-mute); margin:14px 4px 6px;}
+  .lay-palette h4:first-child{margin-top:2px;}
+  .palette-item{
+    display:flex; align-items:center; gap:8px; padding:9px 8px; border-radius:8px; font-size:12.5px; font-weight:600; color:var(--navy);
+    margin-bottom:4px; border:1px solid transparent; transition:background .12s, border-color .12s;
+    touch-action:none; min-height:38px;
+  }
+  .palette-item:hover{background:var(--gray-canvas);}
+  .palette-item.armed{border-color:var(--green); background:#F2FBF5;}
+  .palette-item .swatch{width:16px; height:16px; border-radius:4px; flex:0 0 auto; border:1px solid rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; font-size:11px;}
+  .palette-item .picon{font-size:15px; flex:0 0 auto; width:20px; text-align:center;}
+  .palette-item .plabel{flex:1 1 auto;}
+  .palette-item .pdim{font-size:10px; color:var(--text-mute); font-weight:500;}
+  #canvasWrap{position:relative; overflow:hidden; background:var(--gray-canvas);}
+  #stage{display:block; touch-action:none;}
+  #stage.placing{cursor:crosshair;}
+  #stage.panning{cursor:grabbing;}
+  #ghostChip{
+    position:fixed; z-index:60; pointer-events:none; display:none; transform:translate(-50%,-140%);
+    background:var(--navy); color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px;
+  }
+  .place-hint{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:15; display:none;
+    background:var(--green); color:#fff; font-size:13px; font-weight:700; padding:8px 10px 8px 16px; border-radius:22px;
+    box-shadow:0 4px 14px rgba(58,157,93,.4); white-space:nowrap;
+    align-items:center; gap:10px;
+  }
+  .place-hint.active{display:flex;}
+  .place-hint .end-placement-btn{
+    pointer-events:auto; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff;
+    font-size:12px; font-weight:700; padding:6px 12px; border-radius:16px;
+  }
+  .place-hint .end-placement-btn:hover{ background:rgba(255,255,255,.32); }
+  .lay-props-wrap{position:relative; background:#fff; border-left:1px solid var(--border); display:flex; flex-direction:column; min-height:0;}
+  .lay-props{overflow:auto; padding:14px; flex:1 1 auto;}
+  .lay-props h4{font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-mute); margin:0 0 10px;}
+  .prop-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
+  .prop-row label{font-size:11.5px; color:var(--text-mute); font-weight:600;}
+  .prop-row input, .prop-row select{
+    width:104px; border:1.5px solid var(--border); border-radius:6px; padding:6px 7px; font-size:12px; text-align:right;
+  }
+  .prop-empty{font-size:12px; color:var(--text-mute); padding:20px 4px; text-align:center;}
+  .prop-actions{display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;}
+
+  .resultbar{
+    background:#fff; border-top:1px solid var(--border); padding:14px 24px; display:flex; gap:34px; align-items:center;
+    flex:0 0 auto; flex-wrap:wrap; font-size:12px;
+  }
+  .resultbar .rb-item{display:flex; flex-direction:column; gap:2px;}
+  .resultbar .rb-item b{font-size:17px; color:var(--navy); font-weight:800;}
+  .resultbar .rb-item span{font-size:10px; color:var(--text-mute); text-transform:uppercase; letter-spacing:.3px;}
+  .statuspill{
+    margin-left:auto; display:flex; align-items:center; gap:8px; font-weight:700; font-size:12px; padding:6px 14px; border-radius:20px;
+  }
+  .statuspill.ok{background:rgba(58,157,93,.14); color:var(--green-dark);}
+  .statuspill.warn{background:rgba(225,167,60,.18); color:#8A6410;}
+  .statuspill.bad{background:rgba(192,57,43,.14); color:var(--danger);}
+  .statuspill.clickable{cursor:pointer; border:none;}
+  .statuspill.clickable:hover{filter:brightness(0.95);}
+
+  .conflict-row{display:flex; gap:10px; padding:12px 0; border-bottom:1px solid var(--border);}
+  .conflict-row:last-child{border-bottom:none;}
+  .conflict-row-num{font-weight:800; color:var(--text-mute); flex:0 0 auto; width:20px;}
+  .conflict-row-body{flex:1 1 auto;}
+  .conflict-row-msg{font-size:13px; color:var(--text); margin-bottom:8px; line-height:1.5;}
+  .conflict-row-actions{display:flex; gap:8px;}
+
+  /* ================= FOTOS ================= */
+  .photo-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(110px,1fr)); gap:10px; margin-top:12px;}
+  .photo-thumb{position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--border); cursor:pointer; background:var(--gray-canvas); aspect-ratio:1/1;}
+  .photo-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .photo-thumb .photo-thumb-title{position:absolute; left:0; right:0; bottom:0; background:linear-gradient(0deg,rgba(7,21,39,.82),transparent); color:#fff; font-size:10.5px; font-weight:700; padding:5px 7px 4px; line-height:1.2;}
+  .photo-add-tile{
+    border:2px dashed var(--border-strong); border-radius:10px; aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:4px; color:var(--text-mute); font-size:11.5px; font-weight:700; cursor:pointer; background:#fff;
+  }
+  .photo-add-tile:hover{border-color:var(--green); color:var(--green-dark);}
+  .photo-add-tile .plus-ic{font-size:22px;}
+  .photo-quickpicks{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0;}
+  .photo-quickpick{border:1px solid var(--border); background:#fff; border-radius:14px; padding:5px 11px; font-size:11.5px; font-weight:600; color:var(--navy);}
+  .photo-quickpick:hover{border-color:var(--navy);}
+  .photo-lightbox-img{width:100%; max-height:44vh; object-fit:contain; background:#0B1E33; border-radius:8px; margin-bottom:14px;}
+
+  /* ================= AI-ANALYSE ================= */
+  .ai-section{margin-bottom:18px;}
+  .ai-section:last-child{margin-bottom:0;}
+  .ai-section-title{font-weight:800; color:var(--navy); font-size:13.5px; margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .ai-badge{font-size:9.5px; font-weight:700; color:var(--text-mute); background:var(--gray-canvas); padding:2px 8px; border-radius:9px; text-transform:none;}
+  .ai-point{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; line-height:1.55; margin-bottom:7px;}
+  .ai-point .dot{flex:0 0 auto; margin-top:5px; width:6px; height:6px; border-radius:50%; background:var(--green);}
+  .ai-point.risk .dot{background:var(--warn);}
+  .ai-question-list{display:flex; flex-direction:column; gap:6px;}
+  .ai-question{background:var(--gray-canvas); border-radius:8px; padding:9px 12px; font-size:12.5px; color:var(--text);}
+
+  /* ================= NOTER ================= */
+  #notesTextarea{width:100%; min-height:160px; border:1.5px solid var(--border); border-radius:8px; padding:12px; font-size:13px; font-family:inherit; resize:vertical;}
+
+  .conflict-marker{position:absolute; pointer-events:none;}
+
+  /* ================= FADE-OVERGANGE MELLEM TRIN (~250ms, ingen hårde skift) ================= */
+  .screen-fade{opacity:0; transition:opacity .25s ease;}
+  .screen-fade.in{opacity:1;}
+
+  /* ================= "GENERÉR LAYOUT" WOW-OVERLAY ================= */
+  .genOverlay{
+    position:fixed; inset:0; z-index:80; background:rgba(11,30,51,.82); display:none;
+    align-items:center; justify-content:center; backdrop-filter:blur(2px);
+  }
+  .genOverlay.active{display:flex;}
+  .genOverlay-card{
+    width:min(420px,86vw); text-align:center; color:#fff;
+  }
+  .genOverlay-spinner{
+    width:52px; height:52px; margin:0 auto 22px; border-radius:50%;
+    border:4px solid rgba(255,255,255,.18); border-top-color:var(--green);
+    animation:genspin .8s linear infinite;
+  }
+  @keyframes genspin{ to{ transform:rotate(360deg); } }
+  .genOverlay-text{font-size:15px; font-weight:700; min-height:22px; transition:opacity .2s;}
+  .genOverlay-sub{font-size:11.5px; color:#9FB3C8; margin-top:8px;}
+  .genOverlay-done .genOverlay-spinner{border-top-color:var(--green); border-color:rgba(58,157,93,.25); animation:none;}
+  .genOverlay-done .genOverlay-spinner::after{content:"✓"; display:block; line-height:44px; font-size:24px; color:var(--green); font-weight:800;}
+
+  /* ================= MODALS ================= */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(7,21,39,.55); z-index:70; display:none; align-items:center; justify-content:center;}
+  .modal-backdrop.active{display:flex;}
+  .modal{background:#fff; border-radius:14px; width:min(640px,92vw); max-height:86vh; overflow:auto; padding:26px 28px;}
+  .modal h3{margin:0 0 4px; color:var(--navy); font-size:18px;}
+  .modal .sub{font-size:12px; color:var(--text-mute); margin-bottom:18px;}
+  .modal-close{position:sticky; float:right; top:0;}
+
+  /* ================= RESULT / REPORT (TRIN 6) ================= */
+  #resultScreen{position:fixed; inset:0; display:none; z-index:20; background:var(--gray-bg); overflow:auto;}
+  #resultScreen.active{display:block;}
+  .res-header{background:var(--navy); color:#fff; padding:16px 26px; display:flex; justify-content:space-between; align-items:center;}
+  .res-wrap{max-width:900px; margin:26px auto 90px; padding:0 26px;}
+  .res-card{background:#fff; border:1px solid var(--border); border-radius:14px; padding:26px; margin-bottom:18px;}
+  .res-title{font-size:20px; font-weight:800; color:var(--navy); margin:0 0 2px;}
+  .res-meta{font-size:12px; color:var(--text-mute); margin-bottom:18px;}
+  .res-kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:6px;}
+  .res-kpi{background:var(--gray-canvas); border-radius:10px; padding:14px; text-align:center;}
+  .res-kpi b{display:block; font-size:22px; color:var(--navy); font-weight:800;}
+  .res-kpi span{font-size:10.5px; color:var(--text-mute); text-transform:uppercase; letter-spacing:.3px;}
+  .res-conclusion{background:#F2FBF5; border:1px solid rgba(58,157,93,.3); border-radius:10px; padding:16px 18px; font-size:13px; line-height:1.6; color:var(--text);}
+  .res-disclaimer{background:#FEF9EE; border:1px solid rgba(225,167,60,.4); border-radius:10px; padding:14px 16px; font-size:11.5px; color:#6B5410; line-height:1.55; margin-top:12px;}
+  .res-imgwrap{border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:16px;}
+  .res-imgwrap img{width:100%; display:block;}
+  table.stykliste{width:100%; border-collapse:collapse; font-size:12px;}
+  table.stykliste th, table.stykliste td{border:1px solid var(--border); padding:7px 9px; text-align:left;}
+  table.stykliste th{background:var(--gray-canvas); font-weight:700; color:var(--navy); font-size:11px; text-transform:uppercase;}
+
+  /* ================= PRINT REPORT ================= */
+  #printReport{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printReport, #printReport *{visibility:visible;}
+    #printReport{display:block; position:absolute; left:0; top:0; width:100%;}
+    .pr-page{page-break-after:always; padding:14mm;}
+    .pr-page:last-child{page-break-after:auto;}
+  }
+  .pr-page{position:relative; width:210mm; min-height:297mm; margin:0 auto 14px; background:#fff; padding:14mm; box-sizing:border-box; font-size:12px;}
+  .pr-headerbar{display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:10px; margin-bottom:16px;}
+  .pr-headerbar .company{font-weight:800; color:var(--navy); font-size:14px;}
+  .pr-headerbar img{max-height:34px;}
+  .pr-h1{font-size:19px; font-weight:800; color:var(--navy); margin:0 0 3px;}
+  .pr-sub{font-size:11px; color:var(--text-mute); margin-bottom:14px;}
+  .pr-grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .pr-kpi{background:#F5F7F9; border-radius:8px; padding:10px; text-align:center;}
+  .pr-kpi b{display:block; font-size:18px; color:var(--navy);}
+  .pr-kpi span{font-size:9.5px; color:var(--text-mute); text-transform:uppercase;}
+  .pr-footer{position:absolute; bottom:10mm; left:14mm; right:14mm; font-size:9.5px; color:var(--text-mute); border-top:1px solid var(--border); padding-top:6px; display:flex; justify-content:space-between;}
+
+  .hidden{display:none !important;}
+  .badge{display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; background:var(--gray-canvas); color:var(--text-mute);}
+  .badge.pending{background:#FEF9EE; color:#8A6410;}
+</style>
+</head>
+<body>
+
+<!-- ================= START SCREEN ================= -->
+<div id="startScreen">
+  <div class="start-card">
+    <div class="start-logo">Nordic Operations · Reoler A/S pilot</div>
+    <div class="start-title">LayoutScan Sales</div>
+    <div class="start-sub">Fra opmåling til lagerforslag på under 20 minutter.</div>
+    <div class="start-progress">
+      <span>Kunde</span><span class="arrow">→</span><span>Lager</span><span class="arrow">→</span><span>Drift</span><span class="arrow">→</span><span>Reoler</span><span class="arrow">→</span><span>Layout</span><span class="arrow">→</span><span>Resultat</span>
+    </div>
+    <div class="start-choices">
+      <div class="start-choice" id="btnNewProject">
+        <div class="ic">🆕</div>
+        <div class="t">Nyt kundeprojekt</div>
+        <div class="d">Start en ny lagerdisposition hos en kunde fra bunden.</div>
+      </div>
+      <div class="start-choice" id="btnOpenProject">
+        <div class="ic">📂</div>
+        <div class="t">Åbn gemt projekt</div>
+        <div class="d">Fortsæt et projekt gemt lokalt som JSON-fil.</div>
+      </div>
+      <div class="start-choice" id="btnOpenDemo">
+        <div class="ic">🎬</div>
+        <div class="t">Åbn demo</div>
+        <div class="d">Se et færdigt eksempel: Demo Lager A/S, 40×25 m.</div>
+      </div>
+    </div>
+    <div class="start-footer">LayoutScan Sales v0.2.1 · Pilot til Reoler A/S · Bygget af Nordic Operations</div>
+  </div>
+  <input type="file" id="fileOpenInput" accept=".json" style="display:none;">
+</div>
+
+<!-- ================= WIZARD ================= -->
+<div id="wizard">
+  <div class="wiz-header">
+    <div class="wiz-brand">LayoutScan Sales <small>Nordic Operations · Reoler A/S pilot</small></div>
+    <div class="wiz-steps" id="wizSteps"></div>
+    <div class="wiz-actions-top">
+      <button class="tbtn secondary" id="btnOpenPhotosWiz" title="Fotodokumentation">📷 Fotos</button>
+      <button class="tbtn secondary" id="btnOpenAIWiz" title="AI-analyse (regelbaseret)">🤖 AI</button>
+      <button class="tbtn secondary" id="btnOpenNotesWiz" title="Projektnoter">📝 Noter</button>
+      <button class="tbtn primary" id="btnWizSave" title="Gem projekt lokalt">💾 Gem</button>
+      <button class="tbtn secondary" id="btnWizHome" title="Til startskærm">🏠 Start</button>
+    </div>
+  </div>
+  <div class="wiz-body">
+    <div class="wiz-inner" id="wizInner">
+      <!-- step content injected here -->
+    </div>
+  </div>
+  <div class="wiz-footer">
+    <button class="btn" id="btnWizBack">← Tilbage</button>
+    <div id="wizFooterCenter" style="font-size:11.5px; color:var(--text-mute);"></div>
+    <button class="btn primary" id="btnWizNext">Næste →</button>
+  </div>
+</div>
+
+<!-- ================= LAYOUT SCREEN (TRIN 5) ================= -->
+<div id="layoutScreen">
+  <div class="lay-top">
+    <div class="grp">
+      <button class="tbtn secondary" id="btnBackToGuide">← Guide</button>
+      <button class="tbtn secondary toggle-panel-btn" id="btnTogglePalette">☰ Objekter</button>
+    </div>
+    <div class="grp">
+      <button class="tbtn primary" id="btnLaySave" title="Gem">💾 Gem</button>
+      <button class="tbtn secondary" id="btnUndo" title="Fortryd">↶ Fortryd</button>
+      <button class="tbtn secondary" id="btnRedo" title="Gentag">↷ Gentag</button>
+    </div>
+    <div class="grp">
+      <button class="tbtn active" id="btnGrid" title="Vis/skjul grid">Grid</button>
+      <button class="tbtn active" id="btnSnap" title="Snap">Snap</button>
+      <button class="tbtn secondary" id="btnZoomOut">−</button>
+      <button class="tbtn secondary" id="btnZoomReset">100%</button>
+      <button class="tbtn secondary" id="btnZoomIn">+</button>
+      <button class="tbtn secondary" id="btnFit">Fit</button>
+    </div>
+    <div class="grp">
+      <button class="tbtn secondary" id="btnMeasureMode" title="Vælg 2 objekter for at måle afstand">📏 Mål</button>
+      <button class="tbtn secondary toggle-panel-btn" id="btnToggleProps">⚙ Egenskaber</button>
+    </div>
+    <div class="grp" style="border-right:none; margin-left:auto;">
+      <button class="tbtn primary" id="btnGenerateLayout" title="Regelbaseret forslag ud fra lager, truck og reolvalg">⚙️ Generér layoutforslag</button>
+      <button class="tbtn secondary" id="btnResetProposal" title="Fjern det genererede forslag">Nulstil forslag</button>
+      <button class="tbtn secondary" id="btnAutoFixAll" title="Forsøg at rette alle fundne konflikter automatisk">🛠️ Ret automatisk</button>
+      <button class="tbtn secondary" id="btnOpenPhotosLay" title="Fotodokumentation">📷 Fotos</button>
+      <button class="tbtn secondary" id="btnOpenAILay" title="AI-analyse (regelbaseret)">🤖 AI</button>
+      <button class="tbtn primary" id="btnGoResult" title="Se resultat og rapport">📄 Resultat →</button>
+    </div>
+  </div>
+  <div class="lay-main">
+    <div id="panelBackdrop" class="panel-backdrop"></div>
+    <div class="lay-palette">
+      <button class="panel-close-btn" id="btnClosePalette">✕</button>
+      <div style="font-size:11px; color:var(--text-mute); line-height:1.5; padding:2px 4px 10px; border-bottom:1px solid var(--border); margin-bottom:8px;">
+        <b style="color:var(--navy);">Objekter</b> — tryk på et objekt for at placere det på tegningen. Tryk derefter på det placerede objekt for at vælge, flytte, dreje eller redigere det i "Egenskaber" til højre.
+      </div>
+      <h4>Bygning</h4>
+      <div id="paletteBuilding"></div>
+      <h4>Infrastruktur</h4>
+      <div id="paletteInfra"></div>
+      <h4>Områder</h4>
+      <div id="paletteAreas"></div>
+      <h4>Reoler</h4>
+      <div id="paletteRacks"></div>
+    </div>
+    <div id="canvasWrap">
+      <canvas id="stage"></canvas>
+      <div id="ghostChip"></div>
+      <div id="placeHint" class="place-hint">Tryk på tegningen for at placere.</div>
+    </div>
+    <div class="lay-props-wrap">
+      <button class="panel-close-btn" id="btnCloseProps">✕</button>
+      <div style="font-size:11px; color:var(--text-mute); line-height:1.5; padding:10px 14px 10px; border-bottom:1px solid var(--border);">
+        <b style="color:var(--navy);">Egenskaber</b> — vises automatisk for det objekt, du har valgt på tegningen. Felterne tilpasser sig objekttypen (fx antal fag og niveauer for reoler).
+      </div>
+      <div class="lay-props" id="layProps">
+        <div class="prop-empty">Vælg et objekt på tegningen for at se og redigere dets egenskaber.</div>
+      </div>
+    </div>
+  </div>
+  <div class="resultbar" id="resultBar"></div>
+</div>
+
+<!-- ================= RESULT SCREEN (TRIN 6) ================= -->
+<div id="resultScreen">
+  <div class="res-header">
+    <div>
+      <div style="font-weight:800; font-size:15px;">Resultat</div>
+      <div style="font-size:11.5px; color:#9FB3C8;">Trin 6 af 6 — LayoutScan Sales</div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="tbtn secondary" id="btnResultBackToLayout">← Tilbage til layout</button>
+      <button class="tbtn secondary" id="btnOpenPhotosRes" title="Fotodokumentation">📷 Fotos</button>
+      <button class="tbtn secondary" id="btnOpenAIRes" title="AI-analyse (regelbaseret)">🤖 AI</button>
+      <button class="tbtn primary" id="btnOpenReportModal">📄 Rapport & eksport</button>
+      <button class="tbtn secondary" id="btnResultHome">🏠 Start</button>
+    </div>
+  </div>
+  <div class="res-wrap" id="resWrap"></div>
+</div>
+
+<!-- ================= REPORT / EXPORT MODAL ================= -->
+<div class="modal-backdrop" id="reportModalBackdrop">
+  <div class="modal">
+    <button class="btn ghost modal-close" id="btnCloseReportModal">✕ Luk</button>
+    <h3>Rapport & eksport</h3>
+    <div class="sub">Generér en kort, kundevenlig rapport eller eksportér projektdata.</div>
+
+    <div class="card">
+      <div class="card-title">Rapportafsender</div>
+      <div class="grid2">
+        <div class="field"><label>Sælger (Reoler A/S)</label><input id="repSeller" placeholder="Navn"></div>
+        <div class="field"><label>Firmalogo <span class="opt">(valgfrit)</span></label><input type="file" id="repLogoInput" accept="image/*"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn primary" id="btnPrintReport">🖨️ Udskriv / Gem som PDF (5 sider)</button>
+      <button class="btn" id="btnExportPNG">🖼️ Eksportér layout som PNG</button>
+      <button class="btn" id="btnExportJSON">🗂️ Eksportér projekt (JSON)</button>
+      <button class="btn" id="btnExportCSV">📄 Eksportér stykliste (CSV)</button>
+      <button class="btn" id="btnExportExcel">📊 Eksportér til Excel</button>
+      <button class="btn" id="btnExportCAD">📐 Eksportér CAD-grundlag (koordinater)</button>
+      <button class="btn" id="btnExportDXF">🧩 Eksportér DXF (AutoCAD)</button>
+    </div>
+    <div style="margin-top:14px; font-size:11px; color:var(--text-mute); line-height:1.5;">
+      Dette er et vejledende dispositionsforslag. Belastninger, montage, gulvforhold, brandsikkerhed og konstruktive krav skal godkendes af Reoler A/S før levering.
+    </div>
+  </div>
+</div>
+
+<!-- ================= PRINT REPORT (rendered only for @media print) ================= -->
+<div id="printReport"></div>
+
+<!-- ================= KONFLIKTLISTE ================= -->
+<div class="modal-backdrop" id="conflictModalBackdrop">
+  <div class="modal">
+    <button class="btn ghost modal-close" id="btnCloseConflictModal">✕ Luk</button>
+    <h3>Konflikter</h3>
+    <div class="sub">Tryk "Vis" for at zoome ind og markere objektet, eller "Ret automatisk" for at rette denne ene konflikt.</div>
+    <div id="conflictModalBody"></div>
+  </div>
+</div>
+
+<!-- ================= RET AUTOMATISK — RESUMÉ ================= -->
+<div class="modal-backdrop" id="autofixModalBackdrop">
+  <div class="modal">
+    <h3>Automatisk rettelse</h3>
+    <div class="sub">Layoutet er gemt, så du altid kan fortryde.</div>
+    <div id="autofixModalBody"></div>
+    <div style="display:flex; gap:8px; margin-top:18px;">
+      <button class="btn primary" id="btnAutofixApprove">Godkend</button>
+      <button class="btn" id="btnAutofixUndo">Fortryd</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FOTOS ================= -->
+<div class="modal-backdrop" id="photosModalBackdrop">
+  <div class="modal">
+    <button class="btn ghost modal-close" id="btnClosePhotosModal">✕ Luk</button>
+    <h3>Fotos</h3>
+    <div class="sub">Billeder fra kundebesøget. Alle billeder kommer automatisk med i PDF-rapporten.</div>
+    <div class="photo-quickpicks" id="photoQuickpicks"></div>
+    <div class="photo-grid" id="photoGrid"></div>
+    <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none;">
+  </div>
+</div>
+
+<!-- ================= FOTO — LYSBOKS ================= -->
+<div class="modal-backdrop" id="photoLightboxBackdrop">
+  <div class="modal">
+    <button class="btn ghost modal-close" id="btnClosePhotoLightbox">✕ Luk</button>
+    <h3>Rediger foto</h3>
+    <img id="photoLightboxImg" class="photo-lightbox-img" src="">
+    <div class="grid2">
+      <div class="field"><label>Titel</label><input id="photoTitleInput"></div>
+      <div class="field"><label>Dato</label><input id="photoDateInput" type="date"></div>
+      <div class="field"><label>Fotograf</label><input id="photoPhotographerInput"></div>
+      <div class="field field-full"><label>Kommentar</label><textarea id="photoCommentInput" rows="2"></textarea></div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn danger" id="btnDeletePhoto">Slet billede</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= AI-ANALYSE (regelbaseret — ingen dataoverførsel, ingen automatiske ændringer) ================= -->
+<div class="modal-backdrop" id="aiModalBackdrop">
+  <div class="modal">
+    <button class="btn ghost modal-close" id="btnCloseAIModal">✕ Luk</button>
+    <h3>AI-analyse <span class="ai-badge">Regelbaseret — ingen dataoverførsel</span></h3>
+    <div class="sub">Analyserer kun det aktuelle projekt. Flytter aldrig objekter — kun forslag og opmærksomhedspunkter.</div>
+    <div id="aiModalBody"></div>
+  </div>
+</div>
+
+<!-- ================= NOTER ================= -->
+<div class="modal-backdrop" id="notesModalBackdrop">
+  <div class="modal">
+    <button class="btn ghost modal-close" id="btnCloseNotesModal">✕ Luk</button>
+    <h3>Projektnoter</h3>
+    <div class="sub">Gemmes automatisk og kommer med i PDF-rapporten.</div>
+    <textarea id="notesTextarea" placeholder="Fx: Kunden ønsker tilbud på etape 1. Loftshøjde skal kontrolleres. Eksisterende reoler genbruges. Tilbud afleveres fredag."></textarea>
+  </div>
+</div>
+
+<!-- ================= GENERÉR LAYOUT — WOW-OVERLAY ================= -->
+<div class="genOverlay" id="genOverlay">
+  <div class="genOverlay-card" id="genOverlayCard">
+    <div class="genOverlay-spinner"></div>
+    <div class="genOverlay-text" id="genOverlayText">Analyserer lager...</div>
+    <div class="genOverlay-sub">Regelbaseret beregning — ikke AI</div>
+  </div>
+</div>
+
+<input type="file" id="jsonImportInput" accept=".json" style="display:none;">
+
+<script>
+/* =========================================================
+   LayoutScan Sales v0.2.1 — Nordic Operations · Pilot Reoler A/S
+   Bygget på det tekniske fundament fra LayoutScan Professional v1.1.0
+   (koordinat-transform, canvas-rendering, snap-motor, hit-test og
+   palette-drag er genbrugt og tilpasset). Se leveringsnoten for detaljer.
+   ========================================================= */
+
+/* =========================================================
+   1. OBJEKTBIBLIOTEK — BYGNING / INFRASTRUKTUR / OMRÅDER
+   ========================================================= */
+
+const BUILDING_TYPES = [
+  { type:"vaeg",        label:"Væg",            group:"building", color:"#0B1E33", w:4.0, d:0.2, vh:3.0, icon:"🧱" },
+  { type:"port",        label:"Port",           group:"building", color:"#2F80ED", w:3.0, d:0.3, vh:3.5, icon:"🚪" },
+  { type:"dor",         label:"Dør",            group:"building", color:"#8D6E52", w:1.0, d:0.15, vh:2.1, icon:"🚪" },
+  { type:"soejle",      label:"Søjle",          group:"building", color:"#5B6B7A", w:0.4, d:0.4, vh:8.0, isColumn:true, icon:"⬛" },
+  { type:"kontor",      label:"Kontor",         group:"building", color:"#7C8B99", w:4.0, d:4.0, vh:2.5, icon:"🏢" },
+  { type:"teknikrum",   label:"Teknikrum",      group:"building", color:"#6E7B87", w:3.0, d:3.0, vh:2.5, icon:"⚙" }
+];
+
+const INFRA_TYPES = [
+  { type:"brandvej",    label:"Brandvej",       group:"infra", color:"#E67E22", w:3.0, d:6.0, vh:0.05, isLane:true, icon:"🔥" },
+  { type:"flugtvej",    label:"Flugtvej",       group:"infra", color:"#27AE60", w:1.5, d:8.0, vh:0.05, isLane:true, icon:"🟩" },
+  { type:"forbudt",     label:"Forbudt område", group:"infra", color:"#C0392B", w:2.0, d:2.0, vh:0.05, isRestricted:true, icon:"⛔" },
+  { type:"batterirum",  label:"Batterirum",     group:"infra", color:"#F2C75C", w:3.0, d:3.0, vh:2.2, icon:"🔋" },
+  { type:"ladestation", label:"Ladestation",    group:"infra", color:"#F2A93B", w:1.5, d:1.5, vh:0.1, icon:"⚡" }
+];
+
+const AREA_TYPES = [
+  { type:"varemodtagelse", label:"Varemodtagelse", group:"area", color:"#8FB2D4", w:5.0, d:4.0, vh:0.05, icon:"📦" },
+  { type:"forsendelse",    label:"Forsendelse",    group:"area", color:"#7098BE", w:5.0, d:4.0, vh:0.05, icon:"🚚" },
+  { type:"buffer",         label:"Bufferområde",   group:"area", color:"#E4C766", w:3.0, d:3.0, vh:0.05, icon:"📦" }
+];
+
+const NONRACK_TYPES = BUILDING_TYPES.concat(INFRA_TYPES, AREA_TYPES);
+function nonRackTypeOf(type){ return NONRACK_TYPES.find(t => t.type === type) || null; }
+
+/* =========================================================
+   2. REOLBIBLIOTEK
+   ========================================================= */
+
+// A. Generiske reoltyper — mål er standardforslag, sælgeren justerer altid
+// fagsbredde/dybde/højde manuelt i Trin 4.
+const GENERIC_RACK_TYPES = [
+  { type:"pallereol_enkelt", label:"Enkelt pallereol", color:"#3A9D5D", bayWidth:2.70, depth:1.10, height:4.5, levels:4, palletsPerLevel:2, singleSided:true },
+  { type:"pallereol_dobbelt",label:"Dobbelt pallereol", color:"#2C7A47", bayWidth:2.70, depth:2.20, height:4.5, levels:4, palletsPerLevel:4 },
+  { type:"smaavarereol",     label:"Småvarereol",       color:"#4CAF6D", bayWidth:1.00, depth:0.50, height:2.0, levels:5, palletsPerLevel:0 },
+  { type:"grenreol",         label:"Grenreol",          color:"#1F6B3A", bayWidth:2.00, depth:1.20, height:3.0, levels:3, palletsPerLevel:2 },
+  { type:"gennemlobsreol",   label:"Gennemløbsreol",    color:"#237A4E", bayWidth:2.70, depth:1.40, height:4.5, levels:4, palletsPerLevel:2 },
+  { type:"pushback",         label:"Push Back",         color:"#185C3A", bayWidth:2.70, depth:3.60, height:4.5, levels:4, palletsPerLevel:2 },
+  { type:"drivein",          label:"Drive-In",          color:"#14472E", bayWidth:2.70, depth:6.00, height:6.0, levels:3, palletsPerLevel:1 },
+  { type:"mobile",           label:"Mobile reoler",     color:"#2E7D52", bayWidth:2.70, depth:1.10, height:5.0, levels:5, palletsPerLevel:2 },
+  { type:"mezzanin",         label:"Mezzanin",          color:"#0E3D25", bayWidth:3.00, depth:3.00, height:2.8, levels:1, palletsPerLevel:0 }
+];
+function genericRackOf(type){ return GENERIC_RACK_TYPES.find(t => t.type === type) || null; }
+
+// B. Metalsistem — produktstruktur klar til rigtige produktdata fra Reoler A/S.
+// VIGTIGT: Ingen mål, belastninger eller konstruktionsregler er opfundet her.
+// Alle serier er markeret som "approved:false" og kan ikke vælges i pilotversionen,
+// før Reoler A/S har leveret og godkendt produktdata.
+const RACK_PRODUCTS = [
+  { manufacturer:"Metalsistem", series:"Superbuild",              approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] },
+  { manufacturer:"Metalsistem", series:"Unibuild",                approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] },
+  { manufacturer:"Metalsistem", series:"Super 1-2-3",             approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] },
+  { manufacturer:"Metalsistem", series:"Unishelf",                approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] },
+  { manufacturer:"Metalsistem", series:"Grenreol",                approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] },
+  { manufacturer:"Metalsistem", series:"Mezzanin",                approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] },
+  { manufacturer:"Metalsistem", series:"Andre Metalsistem-systemer", approved:false, status:"Produktdata afventer godkendelse fra Reoler A/S", modules:[] }
+];
+
+/* =========================================================
+   3. TRUCKBIBLIOTEK (genbrugt fra LayoutScan Professional v1.1.0)
+   ========================================================= */
+
+const DEFAULT_TRUCK_TYPES = [
+  { id:"manuel_palleloefter", name:"Manuel palleløfter",   width:0.68, length:1.50, recommendedAisle:2.20, maxLiftHeight:0.20,  turning:"Lille",  builtin:true },
+  { id:"el_palleloefter",     name:"El-palleløfter",       width:0.72, length:1.60, recommendedAisle:2.50, maxLiftHeight:0.20,  turning:"Lille",  builtin:true },
+  { id:"stabler",             name:"Stabler",              width:0.80, length:1.60, recommendedAisle:2.80, maxLiftHeight:3.50,  turning:"Mellem", builtin:true },
+  { id:"reachtruck",          name:"Reachtruck",           width:1.30, length:2.50, recommendedAisle:2.90, maxLiftHeight:11.0,  turning:"Mellem", builtin:true },
+  { id:"modvaegtstruck",      name:"Modvægtstruck",        width:1.15, length:3.70, recommendedAisle:3.50, maxLiftHeight:6.00,  turning:"Stor",   builtin:true },
+  { id:"smalgangstruck",      name:"VNA / smalgangstruck", width:1.30, length:2.90, recommendedAisle:1.80, maxLiftHeight:12.0,  turning:"Meget lille", builtin:true },
+  { id:"agv",                 name:"AGV",                   width:1.10, length:2.20, recommendedAisle:2.20, maxLiftHeight:0.20, turning:"Lille",  builtin:true },
+  { id:"amr",                 name:"AMR",                   width:0.90, length:1.60, recommendedAisle:1.80, maxLiftHeight:0.20, turning:"Lille",  builtin:true }
+];
+
+/* =========================================================
+   4. PALLETYPER
+   ========================================================= */
+
+// Palletyper og andre lagerbærere. Mål er vejledende standardstørrelser (som ved
+// reoltyperne) — sælgeren kan altid justere. "custom:true" låser bredde/dybde/højde
+// op til manuel indtastning, da disse typer varierer for meget til en fast standard.
+const PALLET_TYPES = [
+  { id:"eur",             name:"EUR-palle",             w:0.80, d:1.20, icon:"📦" },
+  { id:"ind",             name:"Industripalle",         w:1.00, d:1.20, icon:"📦" },
+  { id:"halv",            name:"Halvpalle",             w:0.80, d:0.60, icon:"📦" },
+  { id:"kvart",           name:"Kvartpalle",            w:0.60, d:0.40, icon:"📦" },
+  { id:"langgods",        name:"Langgods",              w:0.30, d:3.00, icon:"📏", custom:true },
+  { id:"tromler",         name:"Tromler",               w:0.60, d:0.60, icon:"🛢️" },
+  { id:"kasser",          name:"Kasser",                w:0.40, d:0.30, icon:"📦" },
+  { id:"plastkasser",     name:"Plastkasser",           w:0.60, d:0.40, icon:"🗃️" },
+  { id:"smaagods",        name:"Smågods",               w:0.50, d:0.30, icon:"🔩" },
+  { id:"udtraeksskuffer", name:"Udtræksskuffer",        w:1.00, d:0.60, icon:"🗄️" },
+  { id:"special",         name:"Andre lagerbærere",     w:0.80, d:1.20, icon:"➕", custom:true }
+];
+
+/* =========================================================
+   5. STATE
+   ========================================================= */
+
+const STORAGE_KEY = "layoutscan_sales_v0_1_project";
+const PPM = 50; // pixels pr. meter ved zoom = 1
+
+function defaultProject(){
+  return {
+    version:"1.0",
+    step:1,
+    customer:{ name:"", address:"", zip:"", city:"", contact:"", phone:"", email:"", seller:"", projectNo:"", projectDate:new Date().toISOString().slice(0,10), description:"" },
+    warehouse:{ length:null, width:null, height:null },
+    operation:{
+      palletType:"eur", palletCustom:{w:0.80,d:1.20,h:1.0}, secondaryPalletTypeIds:[],
+      truckId:"reachtruck", customTrucks:[], secondaryTruckIds:[],
+      desiredPalletSpaces:1000, skuCount:null, fifo:"fifo", storageMode:"hel",
+      needsBuffer:false, needsReceiving:true, needsShipping:true
+    },
+    rackSelections:[{ id:"rs_default", manufacturer:"generic", type:"pallereol_dobbelt", seriesLabel:"Dobbelt pallereol", bayWidth:2.70, depth:2.20, height:4.5, levels:4, palletsPerLevel:4, defaultBays:4 }],
+    objects:[],
+    calculations:{},
+    photos:[],
+    notes:"",
+    report:{ companyName:"Reoler A/S", seller:"", logoDataUrl:null, history:[] }
+  };
+}
+
+let project = defaultProject();
+
+let state = {
+  selectedIds: [],
+  camera:{ panX:60, panY:60, zoom:1 },
+  showGrid:true,
+  snapEnabled:true,
+  gridSize:0.5,
+  measureMode:false,
+  undoStack:[],
+  redoStack:[]
+};
+
+// Eksponeret på window til fejlfinding i browserens konsol (fx window.project).
+window.project = project;
+window.state = state;
+
+/* =========================================================
+   6. OBJEKTMODEL
+   ========================================================= */
+
+function createNonRackObject(typeDef, xMeters, yMeters){
+  const now = new Date().toISOString();
+  return {
+    id:"obj_" + Math.random().toString(36).slice(2,10),
+    kind:"nonrack",
+    type: typeDef.type,
+    label: typeDef.label,
+    x:xMeters, y:yMeters,
+    width:typeDef.w, depth:typeDef.d, height:typeDef.vh || 0,
+    rotation:0,
+    color:typeDef.color,
+    isColumn: !!typeDef.isColumn,
+    isLane: !!typeDef.isLane,
+    isRestricted: !!typeDef.isRestricted,
+    locked:false, visible:true,
+    created:now, modified:now,
+    conflicts:[]
+  };
+}
+
+// Producentvalg — arkitekturen er forberedt til flere producenter. I v0.2.1 kan kun
+// "generic" reelt vælges til beregning; Metalsistem-serier er alle låst, indtil Reoler A/S
+// har leveret og godkendt produktdata (se RACK_PRODUCTS).
+const MANUFACTURER_LABELS = { generic:"Generisk", metalsistem:"Metalsistem", other:"Andre producenter" };
+function getManufacturerLabel(m){ return MANUFACTURER_LABELS[m] || "Generisk"; }
+function getRackStatusLabel(m){ return m === "metalsistem" ? "Produktdata godkendt af Reoler A/S" : "Vejledende dispositionsdata"; }
+
+// Blandede reolsystemer: projektet kan have flere AKTIVE reoltyper samtidig
+// (fx dobbelt pallereol + småvarereol + grenreol). getRackSelections() returnerer dem alle;
+// getPrimaryRackSelection() returnerer den første/primære, brugt som fallback hvor kun én giver mening.
+function getRackSelections(){ return project.rackSelections || []; }
+function getPrimaryRackSelection(){
+  const list = getRackSelections();
+  return list[0] || { manufacturer:"generic", type:"pallereol_dobbelt", seriesLabel:"Dobbelt pallereol", bayWidth:2.70, depth:2.20, height:4.5, levels:4, palletsPerLevel:4 };
+}
+function newRackSelectionId(){ return "rs_" + Math.random().toString(36).slice(2,8); }
+
+function createRackObject(bays, xMeters, yMeters, rotationDeg, rsOverride){
+  const rs = rsOverride || getPrimaryRackSelection();
+  const now = new Date().toISOString();
+  const manufacturer = rs.manufacturer || "generic";
+  return {
+    id:"obj_" + Math.random().toString(36).slice(2,10),
+    kind:"rack",
+    type: rs.type,
+    label: rs.seriesLabel || (genericRackOf(rs.type) || {label:"Reol"}).label,
+    x:xMeters, y:yMeters,
+    width: bays * rs.bayWidth, depth: rs.depth, height: rs.height,
+    rotation: rotationDeg || 0,
+    color: (genericRackOf(rs.type) || {color:"#3A9D5D"}).color,
+    bays: bays,
+    bayWidth: rs.bayWidth,
+    levels: rs.levels,
+    palletsPerLevel: rs.palletsPerLevel,
+    manufacturer: manufacturer,
+    manufacturerLabel: getManufacturerLabel(manufacturer),
+    seriesLabel: rs.seriesLabel || (genericRackOf(rs.type) || {label:"Reol"}).label,
+    productStatus: getRackStatusLabel(manufacturer),
+    rackSelectionId: rs.id || null,
+    locked:false, visible:true, generated:false,
+    created:now, modified:now,
+    conflicts:[]
+  };
+}
+
+function rackCapacity(obj){ return (obj.bays||0) * (obj.levels||0) * (obj.palletsPerLevel||0); }
+
+function touch(obj){ obj.modified = new Date().toISOString(); }
+
+function getSelected(){ return project.objects.find(o => o.id === selectedId()) || null; }
+function selectedId(){ return state.selectedIds.length ? state.selectedIds[state.selectedIds.length-1] : null; }
+
+/* =========================================================
+   7. CANVAS SETUP & KOORDINAT-TRANSFORMATIONER
+   (Genbrugt fra LayoutScan Professional v1.1.0)
+   ========================================================= */
+
+let canvas, ctx, wrap, dpr = window.devicePixelRatio || 1;
+
+function initCanvas(){
+  canvas = document.getElementById("stage");
+  ctx = canvas.getContext("2d");
+  wrap = document.getElementById("canvasWrap");
+  window.addEventListener("resize", resizeCanvas);
+  wireCanvasEvents();
+}
+
+function resizeCanvas(){
+  if(!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  canvas.style.width = rect.width + "px";
+  canvas.style.height = rect.height + "px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  render();
+}
+
+function effScale(){ return PPM * state.camera.zoom; }
+function worldToScreen(xm, ym){
+  return { x: xm*effScale() + state.camera.panX, y: ym*effScale() + state.camera.panY };
+}
+function screenToWorld(xs, ys){
+  return { x:(xs - state.camera.panX)/effScale(), y:(ys - state.camera.panY)/effScale() };
+}
+function snap(v){
+  if(!state.snapEnabled) return v;
+  const g = state.gridSize;
+  return Math.round(v/g)*g;
+}
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function dist(x1,y1,x2,y2){ return Math.hypot(x2-x1, y2-y1); }
+
+function getAABB(obj){
+  const cx = obj.x + obj.width/2, cy = obj.y + obj.depth/2;
+  if(!obj.rotation){
+    return { minX:obj.x, minY:obj.y, maxX:obj.x+obj.width, maxY:obj.y+obj.depth, cx, cy };
+  }
+  const rad = obj.rotation*Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
+  const hw = obj.width/2, hd = obj.depth/2;
+  const corners = [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([lx,ly]) => ({
+    x: cx + lx*cos - ly*sin, y: cy + lx*sin + ly*cos
+  }));
+  const xs = corners.map(c=>c.x), ys = corners.map(c=>c.y);
+  return { minX:Math.min.apply(null,xs), maxX:Math.max.apply(null,xs), minY:Math.min.apply(null,ys), maxY:Math.max.apply(null,ys), cx, cy };
+}
+
+function aabbOverlap(a,b,margin){
+  margin = margin||0;
+  return !(a.maxX+margin <= b.minX || a.minX-margin >= b.maxX || a.maxY+margin <= b.minY || a.minY-margin >= b.maxY);
+}
+
+/* =========================================================
+   8. RENDERING
+   ========================================================= */
+
+let renderScheduled = false;
+function requestRender(){
+  if(renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => { renderScheduled = false; render(); });
+}
+
+let activeGuides = [];
+
+function render(){
+  if(!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  ctx.clearRect(0,0,rect.width,rect.height);
+
+  // Området uden for bygningen er hvidt — bygningen skal straks kunne aflæses som "her er lagerhallen".
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0,0,rect.width,rect.height);
+
+  drawBuildingFloor();
+
+  if(state.showGrid) drawGrid(rect.width, rect.height);
+
+  // Vægge tegnes med huller ud for porte, så en port visuelt bryder væglinjen i stedet
+  // for at ligge oven på en sammenhængende væg. Porte og øvrige objekter tegnes derefter ovenpå.
+  const ports = project.objects.filter(o => o.visible !== false && o.type === "port");
+  project.objects.forEach(obj => {
+    if(obj.visible === false) return;
+    if(obj.autoWall){ drawWallWithGaps(obj, ports); return; }
+    if(obj.type === "port"){ drawPortObject(obj); return; }
+    drawObject(obj);
+  });
+
+  if(activeGuides.length) drawGuides();
+
+  const selIds = state.selectedIds;
+  selIds.forEach(id => {
+    const sel = project.objects.find(o => o.id === id);
+    if(sel) drawSelectionChrome(sel, selIds.length > 1);
+  });
+
+  if(selIds.length === 2 && state.measureMode){
+    const a = project.objects.find(o => o.id === selIds[0]);
+    const b = project.objects.find(o => o.id === selIds[1]);
+    if(a && b) drawMeasurementOverlay(a,b);
+  }
+
+  drawOrigin();
+  drawDimensionLabels();
+}
+
+// Tegner en ydervæg som ét eller flere segmenter, med huller ud for overlappende porte,
+// så portåbningen visuelt bryder væglinjen frem for at virke som en del af den massive væg.
+function drawWallWithGaps(wallObj, ports){
+  const wb = getAABB(wallObj);
+  const horizontal = wallObj.width >= wallObj.depth; // nord/syd-vægge er brede og tynde; øst/vest er omvendt
+  const gapMargin = 0.05;
+  const overlapping = ports.filter(p => aabbOverlap(getAABB(p), wb, gapMargin));
+
+  function carve(segments, getRange){
+    overlapping.forEach(p => {
+      const pb = getAABB(p);
+      const [ps, pe] = getRange(pb);
+      const gs = Math.max(getRange(wb)[0], ps - gapMargin), ge = Math.min(getRange(wb)[1], pe + gapMargin);
+      const next = [];
+      segments.forEach(seg => {
+        if(ge <= seg.start || gs >= seg.end){ next.push(seg); return; }
+        if(gs > seg.start) next.push({ start:seg.start, end:gs });
+        if(ge < seg.end) next.push({ start:ge, end:seg.end });
+      });
+      segments = next;
+    });
+    return segments;
+  }
+
+  if(horizontal){
+    let segments = carve([{ start:wb.minX, end:wb.maxX }], b => [b.minX, b.maxX]);
+    segments.forEach(seg => {
+      if(seg.end - seg.start <= 0.02) return;
+      drawWallSegmentRect(seg.start, wb.minY, seg.end - seg.start, wb.maxY - wb.minY, wallObj.color);
+    });
+  } else {
+    let segments = carve([{ start:wb.minY, end:wb.maxY }], b => [b.minY, b.maxY]);
+    segments.forEach(seg => {
+      if(seg.end - seg.start <= 0.02) return;
+      drawWallSegmentRect(wb.minX, seg.start, wb.maxX - wb.minX, seg.end - seg.start, wallObj.color);
+    });
+  }
+}
+
+function drawWallSegmentRect(xm, ym, wM, dM, color){
+  const tl = worldToScreen(xm, ym), br = worldToScreen(xm+wM, ym+dM);
+  ctx.fillStyle = color;
+  ctx.strokeStyle = "rgba(0,0,0,0.3)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(tl.x, tl.y, br.x-tl.x, br.y-tl.y);
+  ctx.strokeRect(Math.round(tl.x)+0.5, Math.round(tl.y)+0.5, Math.round(br.x-tl.x)-1, Math.round(br.y-tl.y)-1);
+}
+
+// Porten skal aldrig kunne forveksles med en væg eller en søjle: markant blå farve, hvid kant,
+// en pil der viser åbningsretningen, og et fast label ("PORT x,x m") der altid er synligt —
+// uanset zoomniveau — så den kan aflæses tydeligt både i tegnefladen, PNG-eksport og PDF-rapport.
+function drawPortObject(obj){
+  const scale = effScale();
+  const center = worldToScreen(obj.x + obj.width/2, obj.y + obj.depth/2);
+  const w = obj.width*scale, d = Math.max(obj.depth*scale, 7);
+
+  ctx.save();
+  ctx.translate(center.x, center.y);
+  ctx.rotate((obj.rotation||0) * Math.PI/180);
+
+  ctx.fillStyle = "#2F80ED";
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 3;
+  roundRect(ctx, -w/2, -d/2, w, d, Math.min(3, w*0.08, d*0.08));
+  ctx.fill(); ctx.stroke();
+
+  // Simpel pil der markerer åbningsretningen (peger ud af bygningen)
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.moveTo(0, -d/2-10); ctx.lineTo(-6, -d/2-1); ctx.lineTo(6, -d/2-1); ctx.closePath();
+  ctx.fill();
+
+  // Tydeligt portikon i midten, så porten aldrig kan forveksles med væg/søjle/dør ved et hurtigt blik
+  if(w > 22 && d > 14){
+    ctx.font = Math.min(16, Math.max(10, d*0.7)) + "px -apple-system, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText("🚪", 0, 0.5);
+  }
+
+  if(obj.conflicts && obj.conflicts.length){
+    const rc = obj.conflicts.some(c=>c.level==="red") ? "#C0392B" : "#E1A73C";
+    ctx.fillStyle = rc; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(-w/2+9, -d/2+9, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Label vises altid — uanset zoomniveau — med hvid baggrundschip for læsbarhed
+  const label = "PORT " + obj.width.toFixed(1).replace(/\.0$/,"") + " m";
+  ctx.save();
+  ctx.font = "700 11px -apple-system, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const tw = ctx.measureText(label).width;
+  const lx = center.x, ly = center.y + d/2 + 13;
+  ctx.fillStyle = "rgba(255,255,255,.94)";
+  ctx.fillRect(lx - tw/2 - 5, ly - 8, tw+10, 16);
+  ctx.strokeStyle = "#2F80ED"; ctx.lineWidth = 1;
+  ctx.strokeRect(lx - tw/2 - 5, ly - 8, tw+10, 16);
+  ctx.fillStyle = "#1657B0";
+  ctx.fillText(label, lx, ly+1);
+  ctx.restore();
+}
+
+// Lyst gulv inde i bygningen, så bygningens omrids er øjeblikkeligt aflæseligt.
+function drawBuildingFloor(){
+  const L = project.warehouse.length, W = project.warehouse.width;
+  if(!(L>0 && W>0)) return;
+  const tl = worldToScreen(0,0), br = worldToScreen(L,W);
+  ctx.fillStyle = "#F0F2F5";
+  ctx.fillRect(tl.x, tl.y, br.x-tl.x, br.y-tl.y);
+}
+
+function drawGrid(w,h){
+  const g = state.gridSize;
+  const topLeft = screenToWorld(0,0), bottomRight = screenToWorld(w,h);
+  const startX = Math.floor(topLeft.x/g)*g, endX = Math.ceil(bottomRight.x/g)*g;
+  const startY = Math.floor(topLeft.y/g)*g, endY = Math.ceil(bottomRight.y/g)*g;
+  ctx.lineWidth = 1;
+  // Reduceret kontrast: gitteret må aldrig overdøve bygningen. Hovedgrid hver meter er lidt mørkere; øvrige linjer er meget lyse.
+  for(let x=startX; x<=endX; x+=g){
+    const isMajor = Math.abs(Math.round(x) - x) < 1e-6;
+    const p = worldToScreen(x,0);
+    ctx.strokeStyle = isMajor ? "#DCE2E8" : "#EEF1F4";
+    ctx.beginPath(); ctx.moveTo(p.x+0.5,0); ctx.lineTo(p.x+0.5,h); ctx.stroke();
+  }
+  for(let y=startY; y<=endY; y+=g){
+    const isMajor = Math.abs(Math.round(y) - y) < 1e-6;
+    const p = worldToScreen(0,y);
+    ctx.strokeStyle = isMajor ? "#DCE2E8" : "#EEF1F4";
+    ctx.beginPath(); ctx.moveTo(0,p.y+0.5); ctx.lineTo(w,p.y+0.5); ctx.stroke();
+  }
+  if(effScale() > 8){
+    ctx.fillStyle = "#A8B4BE"; ctx.font = "10px -apple-system, sans-serif";
+    for(let x=startX; x<=endX; x+=5){
+      const p = worldToScreen(x,0);
+      if(p.x>4 && p.x<w-20) ctx.fillText(x.toFixed(0)+"m", p.x+3, 12);
+    }
+  }
+}
+
+// Lagermål vist direkte på tegningen — opdateres automatisk når bygningen ændres.
+function drawDimensionLabels(){
+  const L = project.warehouse.length, W = project.warehouse.width;
+  if(!(L>0 && W>0)) return;
+  const topMid = worldToScreen(L/2, 0);
+  const leftMid = worldToScreen(0, W/2);
+  ctx.save();
+  ctx.font = "700 12px -apple-system, sans-serif";
+  ctx.fillStyle = "#0B1E33";
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  const topLabel = L.toFixed(1).replace(/\.0$/,"") + " m";
+  const tw = ctx.measureText(topLabel).width;
+  ctx.fillStyle = "rgba(255,255,255,.88)";
+  ctx.fillRect(topMid.x - tw/2 - 6, topMid.y - 22, tw+12, 18);
+  ctx.fillStyle = "#0B1E33";
+  ctx.fillText(topLabel, topMid.x, topMid.y - 6);
+
+  const leftLabel = W.toFixed(1).replace(/\.0$/,"") + " m";
+  ctx.save();
+  ctx.translate(leftMid.x - 14, leftMid.y);
+  ctx.rotate(-Math.PI/2);
+  const lw = ctx.measureText(leftLabel).width;
+  ctx.fillStyle = "rgba(255,255,255,.88)";
+  ctx.fillRect(-lw/2-6, -18, lw+12, 18);
+  ctx.fillStyle = "#0B1E33";
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText(leftLabel, 0, -2);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawOrigin(){
+  const p = worldToScreen(0,0);
+  ctx.strokeStyle = "#9FB3C8"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.stroke();
+}
+
+function isLight(hex){
+  const c = hex.replace("#","");
+  if(c.length < 6) return true;
+  const r=parseInt(c.substr(0,2),16), g=parseInt(c.substr(2,2),16), b=parseInt(c.substr(4,2),16);
+  return (r*299+g*587+b*114)/1000 > 150;
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+function drawObject(obj){
+  const scale = effScale();
+  const center = worldToScreen(obj.x + obj.width/2, obj.y + obj.depth/2);
+  const w = obj.width*scale, d = obj.depth*scale;
+
+  ctx.save();
+  ctx.translate(center.x, center.y);
+  ctx.rotate((obj.rotation||0) * Math.PI/180);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = obj.color;
+  ctx.strokeStyle = "rgba(0,0,0,0.25)";
+  ctx.lineWidth = 1;
+  roundRect(ctx, -w/2, -d/2, w, d, Math.min(4, w*0.06, d*0.06));
+  ctx.fill(); ctx.stroke();
+
+  if(w > 30 && d > 14){
+    ctx.fillStyle = isLight(obj.color) ? "#1B2733" : "#FFFFFF";
+    ctx.font = "11px -apple-system, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    let label = obj.label;
+    if(obj.kind === "rack") label = obj.label + " (" + obj.bays + " fag)";
+    ctx.fillText(label, 0, 0);
+  }
+
+  if(obj.conflicts && obj.conflicts.length){
+    ctx.globalAlpha = 1;
+    const rc = obj.conflicts.some(c=>c.level==="red") ? "#C0392B" : "#E1A73C";
+    ctx.fillStyle = rc; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(-w/2+9, -d/2+9, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  if(obj.locked){
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath(); ctx.arc(w/2-9,-d/2+9,8,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#5B6B7A"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#5B6B7A"; ctx.font = "9px -apple-system, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🔒", w/2-9, -d/2+9.5);
+  }
+  ctx.restore();
+}
+
+function getHandles(obj){
+  const scale = effScale();
+  const center = worldToScreen(obj.x + obj.width/2, obj.y + obj.depth/2);
+  const w = obj.width*scale, d = obj.depth*scale;
+  const rad = (obj.rotation||0)*Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
+  function toScreen(lx,ly){ return { x:center.x + (lx*cos - ly*sin), y:center.y + (lx*sin + ly*cos) }; }
+  return { resize: toScreen(w/2, d/2), rotate: toScreen(0, -d/2-22), center };
+}
+
+function drawSelectionChrome(obj, isMultiPair){
+  const scale = effScale();
+  const center = worldToScreen(obj.x + obj.width/2, obj.y + obj.depth/2);
+  const w = obj.width*scale, d = obj.depth*scale;
+  ctx.save();
+  ctx.translate(center.x, center.y);
+  ctx.rotate((obj.rotation||0)*Math.PI/180);
+  ctx.strokeStyle = isMultiPair ? "#8E7CC3" : "#3A9D5D";
+  ctx.lineWidth = 2; ctx.setLineDash([5,4]);
+  ctx.strokeRect(-w/2-4,-d/2-4,w+8,d+8);
+  ctx.setLineDash([]);
+  if(!isMultiPair && !obj.locked){
+    ctx.beginPath(); ctx.moveTo(0,-d/2-4); ctx.lineTo(0,-d/2-22); ctx.stroke();
+    ctx.fillStyle="#FFFFFF"; ctx.strokeStyle="#3A9D5D"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.rect(w/2-5,d/2-5,10,10); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,-d/2-22,6,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGuides(){
+  const rect = wrap.getBoundingClientRect();
+  ctx.save();
+  ctx.strokeStyle = "#E040FB"; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+  activeGuides.forEach(g => {
+    if(g.axis === "x"){ const p = worldToScreen(g.pos,0); ctx.beginPath(); ctx.moveTo(p.x,0); ctx.lineTo(p.x,rect.height); ctx.stroke(); }
+    else { const p = worldToScreen(0,g.pos); ctx.beginPath(); ctx.moveTo(0,p.y); ctx.lineTo(rect.width,p.y); ctx.stroke(); }
+  });
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawMeasurementOverlay(a,b){
+  const ba = getAABB(a), bb = getAABB(b);
+  const ax = ba.cx, ay = ba.cy, bx = bb.cx, by = bb.cy;
+  const p1 = worldToScreen(ax,ay), p2 = worldToScreen(bx,by);
+  const meters = dist(ax,ay,bx,by);
+  ctx.save();
+  ctx.strokeStyle = "#E67E22"; ctx.fillStyle = "#E67E22"; ctx.lineWidth = 1.5;
+  ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  ctx.setLineDash([]);
+  const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+  ctx.font = "12px -apple-system, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="bottom";
+  ctx.fillStyle = "#fff"; ctx.fillRect(mx-30,my-18,60,16);
+  ctx.fillStyle = "#E67E22"; ctx.fillText(meters.toFixed(2)+" m", mx, my-2);
+  ctx.restore();
+}
+
+function hitTestHandle(obj, sx, sy, isTouch){
+  const h = getHandles(obj);
+  const r = isTouch ? 20 : 9; // touch/pen skal have et markant større hit-mål end mus
+  if(dist(sx,sy,h.resize.x,h.resize.y) < r) return "resize";
+  if(dist(sx,sy,h.rotate.x,h.rotate.y) < r) return "rotate";
+  return null;
+}
+
+function screenToLocalHit(obj, sx, sy){
+  const scale = effScale();
+  const center = worldToScreen(obj.x + obj.width/2, obj.y + obj.depth/2);
+  const rad = -(obj.rotation||0)*Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
+  const dx = sx-center.x, dy = sy-center.y;
+  return { x:(dx*cos - dy*sin)/scale, y:(dx*sin + dy*cos)/scale };
+}
+
+function hitTestObject(sx, sy){
+  for(let i=project.objects.length-1; i>=0; i--){
+    const obj = project.objects[i];
+    if(obj.visible === false) continue;
+    const local = screenToLocalHit(obj, sx, sy);
+    if(Math.abs(local.x) <= obj.width/2 && Math.abs(local.y) <= obj.depth/2) return obj;
+  }
+  return null;
+}
+
+/* =========================================================
+   9. POINTER-INTERAKTION (genbrugt/tilpasset fra LayoutScan Professional)
+   ========================================================= */
+
+let interaction = null;
+let armedType = null;
+let ghostFollow = false;
+
+function wireCanvasEvents(){
+  // passive:false + preventDefault er nødvendigt på iPad Safari, ellers vinder
+  // browserens egen scroll/zoom/callout-gestik over tegnefladens egen drag-håndtering.
+  canvas.addEventListener("pointerdown", onPointerDown, { passive:false });
+  canvas.addEventListener("pointermove", onPointerMove, { passive:false });
+  canvas.addEventListener("pointerup", onPointerUp, { passive:false });
+  canvas.addEventListener("pointercancel", onPointerUp, { passive:false });
+  wrap.addEventListener("wheel", e => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+    const before = screenToWorld(sx,sy);
+    const factor = e.deltaY < 0 ? 1.08 : 1/1.08;
+    state.camera.zoom = clamp(state.camera.zoom*factor, 0.15, 6);
+    const after = worldToScreen(before.x, before.y);
+    state.camera.panX += sx-after.x; state.camera.panY += sy-after.y;
+    requestRender(); updateZoomLabel();
+  }, { passive:false });
+}
+
+function onPointerDown(e){
+  e.preventDefault();
+  try{ canvas.setPointerCapture(e.pointerId); }catch(err){ /* nogle Safari-versioner kan afvise capture på visse pointerIds — fortsæt uden */ }
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+  const isTouch = e.pointerType === "touch" || e.pointerType === "pen";
+
+  if(armedType){ placeArmedObject(sx, sy); return; }
+
+  const sel = state.selectedIds.length === 1 ? getSelected() : null;
+  if(sel && !sel.locked){
+    const handle = hitTestHandle(sel, sx, sy, isTouch);
+    if(handle){
+      interaction = { mode:handle, obj:sel, startX:sx, startY:sy, startW:sel.width, startD:sel.depth, startRot:sel.rotation, startObjX:sel.x, startObjY:sel.y };
+      return;
+    }
+  }
+
+  const hit = hitTestObject(sx, sy);
+  if(hit){
+    if(state.measureMode || e.shiftKey){
+      selectObject(hit.id, true);
+    } else {
+      selectObject(hit.id, false);
+      if(!hit.locked){
+        const world = screenToWorld(sx, sy);
+        pushUndo();
+        interaction = { mode:"move", obj:hit, offsetX: world.x-hit.x, offsetY: world.y-hit.y };
+      }
+    }
+    return;
+  }
+  if(!e.shiftKey) selectObject(null);
+  interaction = { mode:"pan", startX:sx, startY:sy, startPanX:state.camera.panX, startPanY:state.camera.panY };
+  canvas.classList.add("panning");
+}
+
+function onPointerMove(e){
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+  if(ghostFollow) updateGhostPosition(e.clientX, e.clientY);
+  if(!interaction) return;
+  e.preventDefault(); // undgå at iPad Safari scroller siden, mens et objekt trækkes/roteres/skaleres
+
+  if(interaction.mode === "pan"){
+    state.camera.panX = interaction.startPanX + (sx-interaction.startX);
+    state.camera.panY = interaction.startPanY + (sy-interaction.startY);
+    requestRender(); return;
+  }
+  if(interaction.mode === "move"){
+    const world = screenToWorld(sx, sy);
+    const rawX = world.x - interaction.offsetX, rawY = world.y - interaction.offsetY;
+    const snapped = applySmartSnap(interaction.obj, rawX, rawY);
+    interaction.obj.x = snapped.x; interaction.obj.y = snapped.y;
+    activeGuides = snapped.guides;
+    touch(interaction.obj);
+    requestRender(); syncProps();
+    return;
+  }
+  if(interaction.mode === "resize"){
+    const local = screenToLocalHit(interaction.obj, sx, sy);
+    const newW = Math.max(state.gridSize/2, snap(Math.abs(local.x)*2));
+    const newD = Math.max(state.gridSize/2, snap(Math.abs(local.y)*2));
+    const cx = interaction.obj.x + interaction.obj.width/2, cy = interaction.obj.y + interaction.obj.depth/2;
+    interaction.obj.width = newW; interaction.obj.depth = newD;
+    interaction.obj.x = cx-newW/2; interaction.obj.y = cy-newD/2;
+    if(interaction.obj.kind === "rack") interaction.obj.bays = Math.max(1, Math.round(newW / interaction.obj.bayWidth));
+    touch(interaction.obj);
+    requestRender(); syncProps();
+    return;
+  }
+  if(interaction.mode === "rotate"){
+    const center = worldToScreen(interaction.obj.x + interaction.obj.width/2, interaction.obj.y + interaction.obj.depth/2);
+    let deg = Math.atan2(sy-center.y, sx-center.x) * 180/Math.PI + 90;
+    if(state.snapEnabled) deg = Math.round(deg/15)*15;
+    interaction.obj.rotation = ((deg % 360)+360)%360;
+    touch(interaction.obj);
+    requestRender(); syncProps();
+    return;
+  }
+}
+
+function onPointerUp(e){
+  if(interaction && interaction.mode === "pan") canvas.classList.remove("panning");
+  if(interaction){ interaction = null; activeGuides = []; render(); scheduleSave(); runConflictCheck(); updateResultBar(); }
+}
+
+/* ---------- SMART SNAP ---------- */
+function applySmartSnap(obj, rawX, rawY){
+  if(!state.snapEnabled) return { x:rawX, y:rawY, guides:[] };
+  const threshold = 10/effScale();
+  const guides = [];
+  let x = rawX, y = rawY, bestX=null, bestY=null;
+  const targets = project.objects.filter(o => o.id !== obj.id && o.visible !== false);
+  targets.forEach(o => {
+    const b = getAABB(o);
+    [[x,b.minX],[x,b.maxX],[x+obj.width,b.minX],[x+obj.width,b.maxX],[x+obj.width/2,(b.minX+b.maxX)/2]].forEach(([cur,t]) => {
+      const diff = Math.abs(cur-t);
+      if(diff < threshold && (bestX===null || diff<bestX.diff)) bestX = {cur,target:t,diff};
+    });
+    [[y,b.minY],[y,b.maxY],[y+obj.depth,b.minY],[y+obj.depth,b.maxY],[y+obj.depth/2,(b.minY+b.maxY)/2]].forEach(([cur,t]) => {
+      const diff = Math.abs(cur-t);
+      if(diff < threshold && (bestY===null || diff<bestY.diff)) bestY = {cur,target:t,diff};
+    });
+  });
+  if(bestX){ x += (bestX.target-bestX.cur); guides.push({axis:"x",pos:bestX.target}); }
+  if(bestY){ y += (bestY.target-bestY.cur); guides.push({axis:"y",pos:bestY.target}); }
+  if(!bestX) x = snap(x);
+  if(!bestY) y = snap(y);
+  return { x, y, guides };
+}
+
+/* ---------- PALETTE / PLACERING ---------- */
+
+// Kun objekter der naturligt placeres mange gange i træk forbliver i "placeringsmodus"
+// efter en placering. Alle andre objekter (kontor, brandvej, områder, osv.) afslutter
+// automatisk placeringen efter ét tryk, så næste tryk på objektet FLYTTER det i stedet
+// for at oprette en kopi — jf. Placér → Vælg → Flyt → Redigér.
+const REPEATABLE_PLACEMENT_TYPES = ["port","dor","soejle"];
+function isRepeatablePlacement(typeDef){
+  return typeDef.isRackPlacement || REPEATABLE_PLACEMENT_TYPES.includes(typeDef.type);
+}
+
+function armPlacement(typeDef, el){
+  armedType = typeDef;
+  document.querySelectorAll(".palette-item").forEach(n => n.classList.remove("armed"));
+  if(el) el.classList.add("armed");
+  canvas.classList.add("placing");
+  showPlacementHint(typeDef.label, isRepeatablePlacement(typeDef));
+  if(window.innerWidth <= 900) closeAllPanels();
+}
+function showPlacementHint(label, repeatable){
+  const hint = document.getElementById("placeHint");
+  if(!hint) return;
+  if(repeatable){
+    hint.innerHTML = `<span>✓ Placering aktiv: ${escapeHtml(label)} — tryk på tegningen for at placere flere</span><button type="button" class="end-placement-btn" id="btnEndPlacement">Afslut placering</button>`;
+    hint.classList.add("active");
+    document.getElementById("btnEndPlacement").addEventListener("click", cancelPlacement);
+  } else {
+    hint.innerHTML = `<span>Tryk på tegningen for at placere: ${escapeHtml(label)}</span>`;
+    hint.classList.add("active");
+  }
+}
+function cancelPlacement(){
+  armedType = null;
+  document.querySelectorAll(".palette-item").forEach(n => n.classList.remove("armed"));
+  canvas.classList.remove("placing");
+  const hint = document.getElementById("placeHint");
+  if(hint){ hint.classList.remove("active"); hint.innerHTML = ""; }
+}
+function placeArmedObject(sx, sy){
+  if(!armedType) return;
+  const world = screenToWorld(sx, sy);
+  pushUndo();
+  let obj;
+  if(armedType.isRackPlacement){
+    const bays = (armedType.rackSelection && armedType.rackSelection.defaultBays) || 4;
+    obj = createRackObject(bays, snap(world.x), snap(world.y), 0, armedType.rackSelection);
+  } else {
+    obj = createNonRackObject(armedType, snap(world.x - armedType.w/2), snap(world.y - armedType.d/2));
+  }
+  project.objects.push(obj);
+  selectObject(obj.id, false);
+  render(); scheduleSave(); runConflictCheck(); updateResultBar();
+  // Kun "gentagelige" objekter (porte, døre, søjler, reoler) forbliver armeret, så man
+  // kan placere flere ens i træk. Alle andre afslutter placeringen automatisk med det
+  // samme, så et efterfølgende tryk på objektet vælger/flytter det — ikke kopierer det.
+  if(!isRepeatablePlacement(armedType)) cancelPlacement();
+}
+function updateGhostPosition(clientX, clientY){
+  const g = document.getElementById("ghostChip");
+  g.style.left = clientX+"px"; g.style.top = clientY+"px";
+}
+function startPaletteDrag(ev, typeDef, el){
+  ev.preventDefault();
+  armPlacement(typeDef, el);
+  ghostFollow = true;
+  const g = document.getElementById("ghostChip");
+  g.style.display = "block"; g.textContent = typeDef.label;
+  updateGhostPosition(ev.clientX, ev.clientY);
+  function onMove(e){ updateGhostPosition(e.clientX, e.clientY); }
+  function onUp(e){
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    ghostFollow = false; g.style.display = "none";
+    const rect = canvas.getBoundingClientRect();
+    if(e.clientX>=rect.left && e.clientX<=rect.right && e.clientY>=rect.top && e.clientY<=rect.bottom){
+      placeArmedObject(e.clientX-rect.left, e.clientY-rect.top);
+    } else {
+      cancelPlacement(); // slap uden for tegnefladen — afbryd i stedet for at lade placeringen hænge
+    }
+    // Bemærk: placeArmedObject() afgør selv, om placeringstilstanden skal forblive aktiv
+    // (kun for gentagelige typer som porte/døre/søjler/reoler) eller afsluttes automatisk.
+  }
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+}
+
+/* ---------- VALG / SLET / DUPLIKÉR ---------- */
+
+function selectObject(id, additive){
+  if(!additive){ state.selectedIds = id ? [id] : []; }
+  else if(id){
+    const idx = state.selectedIds.indexOf(id);
+    if(idx>=0) state.selectedIds.splice(idx,1);
+    else { state.selectedIds.push(id); if(state.selectedIds.length>2) state.selectedIds.shift(); }
+  }
+  render(); syncProps();
+}
+function deleteSelected(){
+  if(!state.selectedIds.length) return;
+  pushUndo();
+  project.objects = project.objects.filter(o => !state.selectedIds.includes(o.id));
+  state.selectedIds = [];
+  render(); syncProps(); scheduleSave(); runConflictCheck(); updateResultBar();
+}
+function duplicateSelected(){
+  const sel = getSelected();
+  if(!sel || sel.locked) return;
+  pushUndo();
+  const copy = JSON.parse(JSON.stringify(sel));
+  copy.id = "obj_" + Math.random().toString(36).slice(2,10);
+  copy.x += 0.5; copy.y += 0.5;
+  project.objects.push(copy);
+  selectObject(copy.id, false);
+  scheduleSave(); runConflictCheck(); updateResultBar();
+}
+
+/* ---------- UNDO / REDO (let snapshot-baseret) ---------- */
+function pushUndo(){
+  state.undoStack.push(JSON.stringify(project.objects));
+  if(state.undoStack.length > 40) state.undoStack.shift();
+  state.redoStack = [];
+}
+function undo(){
+  if(!state.undoStack.length) return;
+  state.redoStack.push(JSON.stringify(project.objects));
+  project.objects = JSON.parse(state.undoStack.pop());
+  state.selectedIds = [];
+  render(); syncProps(); scheduleSave(); runConflictCheck(); updateResultBar();
+}
+function redo(){
+  if(!state.redoStack.length) return;
+  state.undoStack.push(JSON.stringify(project.objects));
+  project.objects = JSON.parse(state.redoStack.pop());
+  state.selectedIds = [];
+  render(); syncProps(); scheduleSave(); runConflictCheck(); updateResultBar();
+}
+
+/* ---------- EGENSKABSPANEL ---------- */
+
+function syncProps(){
+  const el = document.getElementById("layProps");
+  if(!el) return;
+  const sel = state.selectedIds.length === 1 ? getSelected() : null;
+  if(!sel){
+    el.innerHTML = '<div class="prop-empty">Vælg et objekt på tegningen for at se og redigere dets egenskaber.</div>';
+    return;
+  }
+  const isRack = sel.kind === "rack";
+  el.innerHTML = `
+    <h4>Egenskaber</h4>
+    <div class="prop-row"><label>Navn</label><input id="pName" value="${escapeHtml(sel.label)}" style="width:140px; text-align:left;"></div>
+    <div class="prop-row"><label>Længde (m)</label><input id="pW" type="number" step="0.1" value="${sel.width.toFixed(2)}"></div>
+    <div class="prop-row"><label>Dybde (m)</label><input id="pD" type="number" step="0.1" value="${sel.depth.toFixed(2)}"></div>
+    <div class="prop-row"><label>Rotation (°)</label><input id="pR" type="number" step="15" value="${Math.round(sel.rotation||0)}"></div>
+    ${isRack ? `
+    <div class="prop-row"><label>Antal fag</label><input id="pBays" type="number" step="1" min="1" value="${sel.bays}"></div>
+    <div class="prop-row"><label>Niveauer</label><input id="pLevels" type="number" step="1" min="1" value="${sel.levels}"></div>
+    <div class="prop-row"><label>Pl./niveau</label><input id="pPPL" type="number" step="1" min="0" value="${sel.palletsPerLevel}"></div>
+    <div class="prop-row"><label>Kapacitet</label><b style="font-size:13px;">${rackCapacity(sel)} paller</b></div>
+    ` : ``}
+    ${sel.conflicts && sel.conflicts.length ? `<div style="background:#FEF9EE; border:1px solid rgba(225,167,60,.4); border-radius:8px; padding:8px 10px; font-size:11px; color:#6B5410; margin:8px 0;">${sel.conflicts.map(c=>"⚠ "+escapeHtml(c.message)).join("<br>")}</div>` : ``}
+    <div class="prop-actions">
+      <button class="tbtn" id="btnPLock">${sel.locked?"🔓 Lås op":"🔒 Lås"}</button>
+      <button class="tbtn" id="btnPDup">Kopiér</button>
+      <button class="tbtn danger" id="btnPDel">Slet</button>
+    </div>
+  `;
+  document.getElementById("pName").addEventListener("change", e => { sel.label=e.target.value; touch(sel); render(); scheduleSave(); });
+  document.getElementById("pW").addEventListener("change", e => { sel.width=Math.max(0.1,parseFloat(e.target.value)||sel.width); if(isRack) sel.bays=Math.max(1,Math.round(sel.width/sel.bayWidth)); touch(sel); render(); scheduleSave(); runConflictCheck(); updateResultBar(); });
+  document.getElementById("pD").addEventListener("change", e => { sel.depth=Math.max(0.1,parseFloat(e.target.value)||sel.depth); touch(sel); render(); scheduleSave(); runConflictCheck(); updateResultBar(); });
+  document.getElementById("pR").addEventListener("change", e => { sel.rotation=parseFloat(e.target.value)||0; touch(sel); render(); scheduleSave(); runConflictCheck(); });
+  if(isRack){
+    document.getElementById("pBays").addEventListener("change", e => { sel.bays=Math.max(1,parseInt(e.target.value)||1); sel.width=sel.bays*sel.bayWidth; touch(sel); render(); syncProps(); scheduleSave(); runConflictCheck(); updateResultBar(); });
+    document.getElementById("pLevels").addEventListener("change", e => { sel.levels=Math.max(1,parseInt(e.target.value)||1); syncProps(); scheduleSave(); updateResultBar(); });
+    document.getElementById("pPPL").addEventListener("change", e => { sel.palletsPerLevel=Math.max(0,parseInt(e.target.value)||0); syncProps(); scheduleSave(); updateResultBar(); });
+  }
+  document.getElementById("btnPLock").addEventListener("click", () => { sel.locked=!sel.locked; render(); syncProps(); scheduleSave(); });
+  document.getElementById("btnPDup").addEventListener("click", duplicateSelected);
+  document.getElementById("btnPDel").addEventListener("click", deleteSelected);
+}
+
+function escapeHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function updateZoomLabel(){
+  const b = document.getElementById("btnZoomReset");
+  if(b) b.textContent = Math.round(state.camera.zoom*100)+"%";
+}
+function zoomBy(f){ state.camera.zoom = clamp(state.camera.zoom*f, 0.15, 6); requestRender(); updateZoomLabel(); }
+function fitToObjects(){
+  const rect = wrap.getBoundingClientRect();
+  const W = project.warehouse.length || 20, H = project.warehouse.width || 15;
+  const FILL = 0.82; // lageret skal fylde ca. 80-85% af canvas — brugeren skal ikke selv zoome første gang
+  const scaleX = (rect.width * FILL) / W, scaleY = (rect.height * FILL) / H;
+  state.camera.zoom = clamp(Math.min(scaleX, scaleY)/PPM, 0.1, 6);
+  const es = effScale();
+  // Centrér bygningen i canvas
+  state.camera.panX = rect.width/2 - (W/2)*es;
+  state.camera.panY = rect.height/2 - (H/2)*es;
+  requestRender(); updateZoomLabel();
+}
+
+/* =========================================================
+   10. WIZARD — NAVIGATION
+   ========================================================= */
+
+const WIZ_STEPS = [
+  { n:1, label:"Kunde" },
+  { n:2, label:"Lager" },
+  { n:3, label:"Drift" },
+  { n:4, label:"Reoler" },
+  { n:5, label:"Layout" },
+  { n:6, label:"Resultat" }
+];
+
+function showStartScreen(){
+  const el = document.getElementById("startScreen");
+  el.style.display = "flex";
+  document.getElementById("wizard").classList.remove("active");
+  document.getElementById("layoutScreen").classList.remove("active");
+  document.getElementById("resultScreen").classList.remove("active");
+  fadeInScreen(el);
+}
+function hideStartScreen(){ document.getElementById("startScreen").style.display = "none"; }
+
+// Fader en skærm blødt ind (~250ms) i stedet for et hårdt skift, når den bliver aktiv.
+function fadeInScreen(el){
+  el.classList.add("screen-fade");
+  el.classList.remove("in");
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("in")));
+}
+
+function goToStep(n){
+  project.step = n;
+  if(n <= 4){
+    const el = document.getElementById("wizard");
+    el.classList.add("active");
+    document.getElementById("layoutScreen").classList.remove("active");
+    document.getElementById("resultScreen").classList.remove("active");
+    hideStartScreen();
+    renderWizStepBar();
+    renderWizStep(n);
+    fadeInScreen(el);
+  } else if(n === 5){
+    const el = document.getElementById("layoutScreen");
+    document.getElementById("wizard").classList.remove("active");
+    el.classList.add("active");
+    document.getElementById("resultScreen").classList.remove("active");
+    hideStartScreen();
+    enterLayoutScreen();
+    fadeInScreen(el);
+  } else if(n === 6){
+    const el = document.getElementById("resultScreen");
+    document.getElementById("wizard").classList.remove("active");
+    document.getElementById("layoutScreen").classList.remove("active");
+    el.classList.add("active");
+    hideStartScreen();
+    renderResultScreen();
+    fadeInScreen(el);
+  }
+  scheduleSave();
+}
+
+function renderWizStepBar(){
+  const el = document.getElementById("wizSteps");
+  el.innerHTML = WIZ_STEPS.map(s => {
+    const cls = s.n < project.step ? "done" : (s.n === project.step ? "active" : "");
+    return `<div class="wiz-step ${cls}">${s.n < project.step ? "✓" : s.n}. ${s.label}</div>`;
+  }).join("");
+}
+
+function validateStep(n){
+  if(n === 1) return !!project.customer.name.trim();
+  if(n === 2) return !!(project.warehouse.length > 0 && project.warehouse.width > 0);
+  if(n === 4) return getRackSelections().length > 0;
+  return true;
+}
+
+document.addEventListener("click", e => {}); // placeholder to keep listeners section grouped
+
+function wireWizardNav(){
+  document.getElementById("btnWizBack").addEventListener("click", () => {
+    if(project.step > 1) goToStep(project.step - 1);
+  });
+  document.getElementById("btnWizNext").addEventListener("click", () => {
+    if(!validateStep(project.step)){
+      const msgs = { 1:"Angiv kundenavn for at fortsætte.", 2:"Angiv lagerets længde og bredde for at fortsætte.", 4:"Vælg mindst én aktiv reoltype for at fortsætte." };
+      alert(msgs[project.step] || "Udfyld de påkrævede felter for at fortsætte.");
+      return;
+    }
+    if(project.step === 2) generateBuildingFromDimensions();
+    if(project.step < 6) goToStep(project.step + 1);
+  });
+  document.getElementById("btnWizHome").addEventListener("click", () => {
+    saveProjectLocal();
+    showStartScreen();
+  });
+  document.getElementById("btnWizSave").addEventListener("click", () => { saveProjectLocal(true); });
+}
+
+/* =========================================================
+   11. TRIN-INDHOLD
+   ========================================================= */
+
+function renderWizStep(n){
+  const inner = document.getElementById("wizInner");
+  const nextBtn = document.getElementById("btnWizNext");
+  const backBtn = document.getElementById("btnWizBack");
+  backBtn.style.visibility = n === 1 ? "hidden" : "visible";
+  nextBtn.textContent = n === 4 ? "Videre til layout →" : "Næste →";
+  document.getElementById("wizFooterCenter").textContent = "Trin " + n + " af 6";
+
+  if(n === 1) inner.innerHTML = stepCustomerHtml();
+  if(n === 2) inner.innerHTML = stepWarehouseHtml();
+  if(n === 3) inner.innerHTML = stepOperationHtml();
+  if(n === 4) inner.innerHTML = stepRackHtml();
+
+  if(n === 1) wireStepCustomer();
+  if(n === 2) wireStepWarehouse();
+  if(n === 3) wireStepOperation();
+  if(n === 4) wireStepRack();
+}
+
+/* ---------- TRIN 1: KUNDE ---------- */
+function stepCustomerHtml(){
+  const c = project.customer;
+  return `
+    <div class="wiz-h1"><span class="step-no">1</span>Kunde</div>
+    <div class="wiz-lead">Grundlæggende oplysninger om kunden og projektet. Kun kundenavn er obligatorisk.</div>
+    <div class="card">
+      <div class="grid2">
+        <div class="field required"><label>Kundenavn</label><input id="cName" value="${escapeHtml(c.name)}"></div>
+        <div class="field"><label>Kontaktperson <span class="opt">(valgfrit)</span></label><input id="cContact" value="${escapeHtml(c.contact)}"></div>
+        <div class="field"><label>Adresse <span class="opt">(valgfrit)</span></label><input id="cAddress" value="${escapeHtml(c.address)}"></div>
+        <div class="field"><label>Postnummer <span class="opt">(valgfrit)</span></label><input id="cZip" value="${escapeHtml(c.zip)}"></div>
+        <div class="field"><label>By <span class="opt">(valgfrit)</span></label><input id="cCity" value="${escapeHtml(c.city)}"></div>
+        <div class="field"><label>Telefon <span class="opt">(valgfrit)</span></label><input id="cPhone" value="${escapeHtml(c.phone)}"></div>
+        <div class="field"><label>E-mail <span class="opt">(valgfrit)</span></label><input id="cEmail" value="${escapeHtml(c.email)}"></div>
+        <div class="field"><label>Reoler A/S-sælger <span class="opt">(valgfrit)</span></label><input id="cSeller" value="${escapeHtml(c.seller)}"></div>
+        <div class="field"><label>Projektnummer <span class="opt">(valgfrit)</span></label><input id="cProjectNo" value="${escapeHtml(c.projectNo)}"></div>
+        <div class="field"><label>Projektdato <span class="opt">(valgfrit)</span></label><input id="cDate" type="date" value="${c.projectDate}"></div>
+        <div class="field field-full"><label>Kort projektbeskrivelse <span class="opt">(valgfrit)</span></label><textarea id="cDesc" rows="3">${escapeHtml(c.description)}</textarea></div>
+      </div>
+    </div>
+  `;
+}
+function wireStepCustomer(){
+  const c = project.customer;
+  const bind = (id,key) => document.getElementById(id).addEventListener("input", e => { c[key]=e.target.value; scheduleSave(); });
+  bind("cName","name"); bind("cContact","contact"); bind("cAddress","address"); bind("cZip","zip");
+  bind("cCity","city"); bind("cPhone","phone"); bind("cEmail","email"); bind("cSeller","seller");
+  bind("cProjectNo","projectNo"); bind("cDate","projectDate"); bind("cDesc","description");
+}
+
+/* ---------- TRIN 2: LAGER ---------- */
+function stepWarehouseHtml(){
+  const w = project.warehouse;
+  const area = (w.length && w.width) ? (w.length*w.width).toFixed(1) : "—";
+  return `
+    <div class="wiz-h1"><span class="step-no">2</span>Lager</div>
+    <div class="wiz-lead">Indtast lagerets mål. Hallen tegnes automatisk, og du placerer porte, søjler og andre elementer i Trin 5 — Layout.</div>
+    <div class="card">
+      <div class="grid3">
+        <div class="field required"><label>Længde (meter)</label><input id="wLen" type="number" step="0.1" min="1" value="${w.length||""}"></div>
+        <div class="field required"><label>Bredde (meter)</label><input id="wWid" type="number" step="0.1" min="1" value="${w.width||""}"></div>
+        <div class="field"><label>Fri lagerhøjde (meter) <span class="opt">(valgfrit)</span></label><input id="wHei" type="number" step="0.1" min="1" value="${w.height||""}"></div>
+      </div>
+      <div class="hallSummary">
+        <div class="kv"><b id="whArea">${area}</b>m² samlet gulvareal</div>
+        <div class="kv"><b id="whDim">${w.length||"—"} × ${w.width||"—"}</b>m indvendige mål</div>
+        <div class="kv"><b id="whHeight">${w.height||"—"}</b>m fri højde</div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn primary" id="btnCreateHall">🏗️ Opret lager</button>
+        <span id="hallCreatedNote" style="margin-left:12px; font-size:12px; color:var(--green-dark); font-weight:700; ${project.objects.some(o=>o.autoWall)?'':'display:none;'}">✓ Lagerhal oprettet</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Placér porte, søjler og andre bygningselementer</div>
+      <div style="font-size:12px; color:var(--text-mute); margin-bottom:10px;">Bygningens rammer oprettes automatisk, når du trykker "Opret lager". Klik "Videre til layout" — der kan du trække væg-, port-, dør- og søjleelementer ind på tegningen med fuld tegneflade og værktøjer.</div>
+    </div>
+  `;
+}
+function wireStepWarehouse(){
+  const w = project.warehouse;
+  function update(){
+    w.length = parseFloat(document.getElementById("wLen").value) || null;
+    w.width = parseFloat(document.getElementById("wWid").value) || null;
+    w.height = parseFloat(document.getElementById("wHei").value) || null;
+    document.getElementById("whArea").textContent = (w.length && w.width) ? (w.length*w.width).toFixed(1) : "—";
+    document.getElementById("whDim").textContent = (w.length||"—") + " × " + (w.width||"—");
+    document.getElementById("whHeight").textContent = w.height||"—";
+    scheduleSave();
+  }
+  document.getElementById("wLen").addEventListener("input", update);
+  document.getElementById("wWid").addEventListener("input", update);
+  document.getElementById("wHei").addEventListener("input", update);
+  document.getElementById("btnCreateHall").addEventListener("click", () => {
+    if(!(w.length>0 && w.width>0)){ alert("Angiv længde og bredde først."); return; }
+    generateBuildingFromDimensions();
+    document.getElementById("hallCreatedNote").style.display = "";
+    scheduleSave();
+  });
+}
+
+function generateBuildingFromDimensions(){
+  const w = project.warehouse;
+  if(!(w.length>0 && w.width>0)) return;
+  // Fjern eksisterende auto-genererede vægge og genopret (regenerering ved ændrede mål)
+  project.objects = project.objects.filter(o => !o.autoWall);
+  const t = 0.5; // vægtykkelse — 2-3x tykkere end tidligere, så bygningen straks kan aflæses
+  const L = w.length, W = w.width;
+  const walls = [
+    { x:-t/2, y:-t/2, width:L+t, depth:t },       // nord
+    { x:-t/2, y:W-t/2, width:L+t, depth:t },       // syd
+    { x:-t/2, y:-t/2, width:t, depth:W+t },        // vest
+    { x:L-t/2, y:-t/2, width:t, depth:W+t }        // øst
+  ];
+  const typeDef = nonRackTypeOf("vaeg");
+  walls.forEach(wl => {
+    const obj = createNonRackObject(typeDef, wl.x, wl.y);
+    obj.width = wl.width; obj.depth = wl.depth; obj.autoWall = true; obj.locked = true;
+    obj.color = "#08131F"; // mørkere kantfarve end standardvæggen
+    project.objects.unshift(obj);
+  });
+}
+
+/* ---------- TRIN 3: DRIFT ---------- */
+function stepOperationHtml(){
+  const o = project.operation;
+  const pallets = PALLET_TYPES.map(p => `
+    <div class="choice-tile ${o.palletType===p.id?'sel':''}" data-pallet="${p.id}">
+      <div class="ic">${p.icon||"📦"}</div><div>${p.name}</div><div class="sub">${p.custom ? "brugerdefineret" : p.w+"×"+p.d+" m"}</div>
+    </div>`).join("");
+  const secondaryPallets = PALLET_TYPES.filter(p => p.id !== o.palletType).map(p => `
+    <label class="choice-tile secondary-truck" style="cursor:pointer;">
+      <input type="checkbox" data-secondary-pallet="${p.id}" ${(o.secondaryPalletTypeIds||[]).includes(p.id)?'checked':''} style="margin-bottom:4px;">
+      <div class="ic" style="font-size:16px;">${p.icon||"📦"}</div>
+      <div style="font-size:11.5px; font-weight:700; color:var(--navy);">${p.name}</div>
+    </label>`).join("");
+  const allTrucks = DEFAULT_TRUCK_TYPES.concat(o.customTrucks);
+  const trucks = allTrucks.map(t => `
+    <div class="choice-tile truck-tile ${o.truckId===t.id?'sel':''}" data-truck="${t.id}">
+      <div class="ic">🚜</div>
+      <div class="truck-name">${t.name}</div>
+      <div class="aisle-value">${t.recommendedAisle.toFixed(2).replace('.',',')} m</div>
+      <div class="aisle-label">Gangbredde</div>
+    </div>`).join("");
+  const secondaryTrucks = allTrucks.filter(t => t.id !== o.truckId).map(t => `
+    <label class="choice-tile truck-tile secondary-truck" style="cursor:pointer;">
+      <input type="checkbox" data-secondary-truck="${t.id}" ${(o.secondaryTruckIds||[]).includes(t.id)?'checked':''} style="margin-bottom:4px;">
+      <div class="truck-name">${t.name}</div>
+      <div class="aisle-value">${t.recommendedAisle.toFixed(2).replace('.',',')} m</div>
+    </label>`).join("");
+  return `
+    <div class="wiz-h1"><span class="step-no">3</span>Drift</div>
+    <div class="wiz-lead">Vælg palletype, primær trucktype og de vigtigste driftsdata. Gangbredden fra den primære truck bruges automatisk i layoutkontrollen og layoutgeneratoren.</div>
+
+    <div class="card">
+      <div class="card-title">Primær palletype / lagerbærer</div>
+      <div class="choice-grid" id="palletGrid">${pallets}</div>
+      <div class="grid3" id="palletCustomFields" style="margin-top:12px; ${PALLET_TYPES.find(p=>p.id===o.palletType && p.custom)?'':'display:none;'}">
+        <div class="field"><label>Bredde (m)</label><input id="palCW" type="number" step="0.01" value="${o.palletCustom.w}"></div>
+        <div class="field"><label>Dybde (m)</label><input id="palCD" type="number" step="0.01" value="${o.palletCustom.d}"></div>
+        <div class="field"><label>Højde (m)</label><input id="palCH" type="number" step="0.01" value="${o.palletCustom.h}"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sekundær palletype <span class="opt">(mange lagre bruger flere typer samtidig — til rapport/overblik, påvirker ikke selve beregningen)</span></div>
+      <div class="choice-grid" id="secondaryPalletGrid">${secondaryPallets}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Primær truck <span class="opt">(bruges til beregning, gangbredde og layoutgenerator)</span></div>
+      <div class="choice-grid" id="truckGrid">${trucks}</div>
+      <div style="margin-top:10px;"><button class="btn small" id="btnAddCustomTruck">+ Tilføj brugerdefineret truck</button></div>
+      <div style="margin-top:6px; font-size:11.5px; color:var(--text-mute);">Kun til specialtrucks, der ikke findes på listen ovenfor — fx en ATEX-godkendt truck eller en smal, specialbygget maskine. De fleste lagre kan bruge standardlisten uden at skulle tilføje noget her.</div>
+      <div id="truckSpecBox" style="margin-top:10px; font-size:12px; color:var(--text-mute);"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sekundære trucks <span class="opt">(til rapport, flow og fremtidig brug — påvirker ikke selve beregningen)</span></div>
+      <div class="choice-grid" id="secondaryTruckGrid">${secondaryTrucks}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Driftsdata</div>
+      <div class="grid2">
+        <div class="field"><label>Ønsket antal pallepladser</label><input id="opDesired" type="number" step="10" value="${o.desiredPalletSpaces}"></div>
+        <div class="field"><label>Antal varenumre <span class="opt">(valgfrit)</span></label><input id="opSku" type="number" step="1" value="${o.skuCount||""}"></div>
+      </div>
+      <div class="grid2" style="margin-top:12px;">
+        <div class="field"><label>Lagerprincip</label>
+          <select id="opFifo"><option value="fifo" ${o.fifo==='fifo'?'selected':''}>FIFO</option><option value="lifo" ${o.fifo==='lifo'?'selected':''}>LIFO</option></select>
+        </div>
+        <div class="field"><label>Primær lagertype</label>
+          <select id="opStorageMode"><option value="hel" ${o.storageMode==='hel'?'selected':''}>Hel-pallelager</option><option value="pluk" ${o.storageMode==='pluk'?'selected':''}>Pluklager</option></select>
+        </div>
+      </div>
+      <div class="grid3" style="margin-top:12px;">
+        <label style="display:flex; gap:8px; align-items:center; font-size:12.5px;"><input type="checkbox" id="opBuffer" ${o.needsBuffer?'checked':''}> Behov for bufferområde</label>
+        <label style="display:flex; gap:8px; align-items:center; font-size:12.5px;"><input type="checkbox" id="opReceiving" ${o.needsReceiving?'checked':''}> Behov for varemodtagelse</label>
+        <label style="display:flex; gap:8px; align-items:center; font-size:12.5px;"><input type="checkbox" id="opShipping" ${o.needsShipping?'checked':''}> Behov for forsendelse</label>
+      </div>
+    </div>
+
+    <div class="card" style="background:#F2FBF5; border-color:rgba(58,157,93,.3);">
+      <div class="card-title">📐 Forventet kapacitet <span class="opt">(hurtigt estimat — hjælp til dig under kundebesøget)</span></div>
+      <div id="capacityEstimateBox"></div>
+    </div>
+  `;
+}
+
+// Hurtigt, forenklet kapacitetsestimat til Trin 3 — INDEN sælgeren har tegnet bygningen
+// færdig i Trin 5. Bruger lagermål (Trin 2) + primær reoltype (Trin 4, eller standardvalget
+// hvis Trin 4 ikke er besøgt endnu) + primær truck til at give et hurtigt "kan det lade sig
+// gøre"-svar. Det endelige, nøjagtige tal beregnes altid af selve layoutgeneratoren i Trin 5,
+// som også tager højde for porte, søjler og andre forhindringer.
+function estimateCapacity(){
+  const w = project.warehouse;
+  const rs = getPrimaryRackSelection();
+  const truck = getSelectedTruck();
+  const desired = project.operation.desiredPalletSpaces || 0;
+  if(!(w.length>0 && w.width>0)){
+    return { possible:null, message:"Angiv lagerets mål i Trin 2 for at se et kapacitetsestimat." };
+  }
+  const margin = 0.3;
+  const usableL = Math.max(0, w.length - margin*2);
+  const usableW = Math.max(0, w.width - margin*2);
+  const rowPitch = rs.depth + truck.recommendedAisle;
+  const estRows = Math.max(0, Math.floor(usableW / rowPitch));
+  const estBaysPerRow = Math.max(0, Math.floor(usableL / rs.bayWidth));
+  const estBays = estRows * estBaysPerRow;
+  const estPallets = estBays * rs.levels * rs.palletsPerLevel;
+  const estRacks = estRows;
+  const utilization = (w.length*w.width) ? (estBays*rs.bayWidth*rs.depth)/(w.length*w.width)*100 : 0;
+
+  if(desired > 0 && estPallets < desired){
+    const shortfall = desired - estPallets;
+    return {
+      possible:false, estRacks, estPallets, utilization,
+      message:`Det ønskede antal på ${desired} pallepladser kan sandsynligvis IKKE nås med det nuværende valg. Forventet kapacitet er kun ca. ${estPallets} pladser (${shortfall} for få). Dette skyldes lagerets størrelse i forhold til den valgte reoltype (${rs.seriesLabel}, ${rs.depth} m dyb) og ${truck.name}s gangbredde på ${truck.recommendedAisle.toFixed(2)} m. Overvej: en smallere-gangbredde-truck, en tættere reoltype, eller reducér det ønskede antal pallepladser.`
+    };
+  }
+  return {
+    possible:true, estRacks, estPallets, utilization,
+    message: desired>0
+      ? `Det ønskede antal på ${desired} pallepladser ser ud til at kunne nås. Forventet: ca. ${estRacks} reolrækker og ${estPallets} pallepladser (${utilization.toFixed(0)}% arealudnyttelse) med ${rs.seriesLabel} og ${truck.name}.`
+      : `Med de nuværende valg (${rs.seriesLabel}, ${truck.name}) forventes ca. ${estRacks} reolrækker og ${estPallets} pallepladser (${utilization.toFixed(0)}% arealudnyttelse).`
+  };
+}
+function renderCapacityEstimate(){
+  const box = document.getElementById("capacityEstimateBox");
+  if(!box) return;
+  const est = estimateCapacity();
+  if(est.possible === null){
+    box.innerHTML = `<div style="font-size:12.5px; color:var(--text-mute);">${escapeHtml(est.message)}</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div style="font-size:13px; line-height:1.6; ${est.possible?'':'color:#8A2E1F;'}">${est.possible?"✅":"⚠️"} ${escapeHtml(est.message)}</div>
+    <div style="font-size:11px; color:var(--text-mute); margin-top:6px;">Dette er et hurtigt estimat baseret på lagermål og den primære reoltype — det endelige tal beregnes i Trin 5, hvor porte, søjler og andre forhindringer også indgår.</div>
+  `;
+}
+function wireStepOperation(){
+  const o = project.operation;
+  document.getElementById("palletGrid").addEventListener("click", e => {
+    const tile = e.target.closest(".choice-tile"); if(!tile) return;
+    o.palletType = tile.dataset.pallet;
+    o.secondaryPalletTypeIds = (o.secondaryPalletTypeIds||[]).filter(id => id !== o.palletType);
+    renderWizStep(3); scheduleSave();
+  });
+  ["palCW","palCD","palCH"].forEach((id,i) => {
+    const el = document.getElementById(id); if(!el) return;
+    el.addEventListener("input", e => { const k=["w","d","h"][i]; o.palletCustom[k]=parseFloat(e.target.value)||o.palletCustom[k]; scheduleSave(); });
+  });
+  document.getElementById("secondaryPalletGrid").addEventListener("change", e => {
+    const cb = e.target.closest("[data-secondary-pallet]"); if(!cb) return;
+    const id = cb.dataset.secondaryPallet;
+    o.secondaryPalletTypeIds = o.secondaryPalletTypeIds || [];
+    if(cb.checked){ if(!o.secondaryPalletTypeIds.includes(id)) o.secondaryPalletTypeIds.push(id); }
+    else { o.secondaryPalletTypeIds = o.secondaryPalletTypeIds.filter(x => x !== id); }
+    scheduleSave();
+  });
+  document.getElementById("truckGrid").addEventListener("click", e => {
+    const tile = e.target.closest(".choice-tile"); if(!tile) return;
+    o.truckId = tile.dataset.truck;
+    // Fjern den nye primære truck fra sekundær-listen, hvis den var der (kan ikke være begge dele)
+    o.secondaryTruckIds = (o.secondaryTruckIds||[]).filter(id => id !== o.truckId);
+    renderWizStep(3); scheduleSave();
+  });
+  document.getElementById("secondaryTruckGrid").addEventListener("change", e => {
+    const cb = e.target.closest("[data-secondary-truck]"); if(!cb) return;
+    const id = cb.dataset.secondaryTruck;
+    o.secondaryTruckIds = o.secondaryTruckIds || [];
+    if(cb.checked){ if(!o.secondaryTruckIds.includes(id)) o.secondaryTruckIds.push(id); }
+    else { o.secondaryTruckIds = o.secondaryTruckIds.filter(x => x !== id); }
+    scheduleSave();
+    renderCapacityEstimate();
+  });
+  document.getElementById("btnAddCustomTruck").addEventListener("click", () => {
+    const name = prompt("Navn på brugerdefineret truck:");
+    if(!name) return;
+    const width = parseFloat(prompt("Bredde (m):","1.2"))||1.2;
+    const length = parseFloat(prompt("Længde (m):","2.5"))||2.5;
+    const aisle = parseFloat(prompt("Anbefalet gangbredde (m):","3.0"))||3.0;
+    const lift = parseFloat(prompt("Maksimal løftehøjde (m):","6.0"))||6.0;
+    const t = { id:"custom_"+Math.random().toString(36).slice(2,8), name, width, length, recommendedAisle:aisle, maxLiftHeight:lift, turning:"Ukendt", builtin:false };
+    o.customTrucks.push(t); o.truckId = t.id;
+    renderWizStep(3); scheduleSave();
+  });
+  document.getElementById("opDesired").addEventListener("input", e => { o.desiredPalletSpaces=parseInt(e.target.value)||0; scheduleSave(); renderCapacityEstimate(); });
+  document.getElementById("opSku").addEventListener("input", e => { o.skuCount=parseInt(e.target.value)||null; scheduleSave(); });
+  document.getElementById("opFifo").addEventListener("change", e => { o.fifo=e.target.value; scheduleSave(); });
+  document.getElementById("opStorageMode").addEventListener("change", e => { o.storageMode=e.target.value; scheduleSave(); });
+  document.getElementById("opBuffer").addEventListener("change", e => { o.needsBuffer=e.target.checked; scheduleSave(); });
+  document.getElementById("opReceiving").addEventListener("change", e => { o.needsReceiving=e.target.checked; scheduleSave(); });
+  document.getElementById("opShipping").addEventListener("change", e => { o.needsShipping=e.target.checked; scheduleSave(); });
+  renderCapacityEstimate();
+}
+
+function getSelectedTruck(){
+  return DEFAULT_TRUCK_TYPES.concat(project.operation.customTrucks).find(t => t.id === project.operation.truckId) || DEFAULT_TRUCK_TYPES[3];
+}
+// Sekundære trucks bruges IKKE i beregning/gangbredde/layoutgenerator (kun den primære gør) —
+// de bruges til rapport/flow-overblik og er forberedt til fremtidig brug (Digital Twin, AI).
+function getSecondaryTrucks(){
+  const all = DEFAULT_TRUCK_TYPES.concat(project.operation.customTrucks);
+  const ids = project.operation.secondaryTruckIds || [];
+  return ids.map(id => all.find(t => t.id === id)).filter(Boolean).filter(t => t.id !== project.operation.truckId);
+}
+function getSelectedPallet(){
+  if(project.operation.palletType === "special") return { id:"special", name:"Specialpalle", w:project.operation.palletCustom.w, d:project.operation.palletCustom.d };
+  return PALLET_TYPES.find(p => p.id === project.operation.palletType) || PALLET_TYPES[0];
+}
+
+/* ---------- TRIN 4: REOLER ---------- */
+let rackBrowseManufacturer = "generic"; // hvilken producent-fane sælgeren kigger på i Trin 4 (uafhængig af den aktive beregning)
+
+function stepRackHtml(){
+  const selections = getRackSelections();
+  rackBrowseManufacturer = rackBrowseManufacturer || "generic";
+
+  const manufacturerTiles = `
+    <div class="choice-grid">
+      <div class="choice-tile ${rackBrowseManufacturer==='generic'?'sel':''}" data-manufacturer="generic">
+        <div class="ic">🗄️</div><div>Generisk</div><div class="sub">Klar til brug nu</div>
+      </div>
+      <div class="choice-tile ${rackBrowseManufacturer==='metalsistem'?'sel':''}" data-manufacturer="metalsistem">
+        <div class="ic">🏗️</div><div>Metalsistem</div><div class="sub"><span class="badge pending">Afventer godkendelse</span></div>
+      </div>
+      <div class="choice-tile ${rackBrowseManufacturer==='other'?'sel':''}" data-manufacturer="other">
+        <div class="ic">➕</div><div>Andre producenter</div><div class="sub">Kommer senere</div>
+      </div>
+    </div>
+  `;
+
+  let seriesHtml = "";
+  if(rackBrowseManufacturer === "generic"){
+    const generics = GENERIC_RACK_TYPES.map(r => {
+      const active = selections.some(s => s.type === r.type);
+      return `
+      <div class="choice-tile rack-tile ${active?'sel':''}" data-rack="${r.type}">
+        <div class="ic">${active ? "✅" : "🗄️"}</div><div>${r.label}</div><div class="sub">${r.bayWidth}×${r.depth} m</div>
+      </div>`;
+    }).join("");
+    seriesHtml = `<div class="choice-grid rack-grid">${generics}</div>
+      <div style="margin-top:10px; font-size:11.5px; color:var(--text-mute);">Tryk på en eller flere reoltyper for at tilføje/fjerne dem. Layoutgeneratoren kombinerer alle aktive typer — de fleste lagre bruger mere end én.</div>`;
+  } else if(rackBrowseManufacturer === "metalsistem"){
+    const metalsistem = RACK_PRODUCTS.map(m => `
+      <div class="choice-tile" style="opacity:.55; cursor:not-allowed;" title="${m.status}">
+        <div class="ic">🔒</div><div>${m.series}</div><div class="sub"><span class="badge pending">Afventer data</span></div>
+      </div>`).join("");
+    seriesHtml = `
+      <div class="choice-grid">${metalsistem}</div>
+      <div style="margin-top:12px; font-size:12px; color:var(--text-mute);">
+        Produktdata afventer godkendelse fra Reoler A/S. Produktserierne kan ses her som forberedelse,
+        men kan først anvendes i beregningen, når Reoler A/S har leveret og godkendt korrekte produktdata.
+      </div>`;
+  } else {
+    seriesHtml = `<div style="font-size:12px; color:var(--text-mute); padding:6px 0;">Andre producenter tilføjes i en senere version. Brug "Generisk" indtil videre.</div>`;
+  }
+
+  const activeSummary = selections.length
+    ? selections.map(s => escapeHtml(s.seriesLabel)).join(" · ")
+    : "Ingen reoltyper valgt endnu";
+
+  return `
+    <div class="wiz-h1"><span class="step-no">4</span>Reoler</div>
+    <div class="wiz-lead">Vælg producent, derefter én eller flere produktserier — de fleste lagre bruger en kombination af reoltyper — og angiv til sidst målene manuelt for hver.</div>
+
+    <div class="card" style="background:#F2FBF5; border-color:rgba(58,157,93,.3);">
+      <div style="font-size:11px; color:var(--text-mute); text-transform:uppercase; letter-spacing:.3px; font-weight:700; margin-bottom:4px;">Aktive reoltyper (bruges i beregningen)</div>
+      <div style="font-size:15px; font-weight:800; color:var(--navy);">${activeSummary}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">A · Vælg producent</div>
+      ${manufacturerTiles}
+    </div>
+
+    <div class="card">
+      <div class="card-title">B · Vælg produktserie(r) <span class="opt">(flervalg)</span></div>
+      ${seriesHtml}
+    </div>
+
+    <div class="card" id="rackMeasureCard" ${rackBrowseManufacturer==='generic' ? '' : 'style="display:none;"'}>
+      <div class="card-title">C · Reolmål for hver aktiv type (justér manuelt)</div>
+      ${selections.map(rs => rackMeasureRowHtml(rs)).join("") || `<div style="font-size:12px; color:var(--text-mute);">Vælg mindst én reoltype i B ovenfor.</div>`}
+    </div>
+  `;
+}
+function rackMeasureRowHtml(rs){
+  return `
+    <div class="rack-measure-row">
+      <div class="rack-measure-title">${escapeHtml(rs.seriesLabel)}</div>
+      <div class="grid3">
+        <div class="field"><label>Fagsbredde (m)</label><input data-rsid="${rs.id}" data-key="bayWidth" type="number" step="0.1" value="${rs.bayWidth}"></div>
+        <div class="field"><label>Reoldybde (m)</label><input data-rsid="${rs.id}" data-key="depth" type="number" step="0.1" value="${rs.depth}"></div>
+        <div class="field"><label>Reolhøjde (m)</label><input data-rsid="${rs.id}" data-key="height" type="number" step="0.1" value="${rs.height}"></div>
+        <div class="field"><label>Antal niveauer</label><input data-rsid="${rs.id}" data-key="levels" type="number" step="1" min="1" value="${rs.levels}"></div>
+        <div class="field"><label>Pallepladser pr. niveau</label><input data-rsid="${rs.id}" data-key="palletsPerLevel" type="number" step="1" min="0" value="${rs.palletsPerLevel}"></div>
+        <div class="field"><label>Antal fag <span class="opt">(manuel placering)</span></label><input data-rsid="${rs.id}" data-key="defaultBays" type="number" step="1" min="1" value="${rs.defaultBays||4}"></div>
+      </div>
+    </div>
+  `;
+}
+function wireStepRack(){
+  document.querySelectorAll("[data-manufacturer]").forEach(tile => {
+    tile.addEventListener("click", () => {
+      rackBrowseManufacturer = tile.dataset.manufacturer;
+      renderWizStep(4);
+    });
+  });
+
+  document.querySelectorAll("[data-rack]").forEach(tile => {
+    tile.addEventListener("click", () => {
+      const type = tile.dataset.rack;
+      const idx = project.rackSelections.findIndex(s => s.type === type);
+      if(idx >= 0){
+        if(project.rackSelections.length <= 1){ alert("Mindst én reoltype skal være valgt."); return; }
+        project.rackSelections.splice(idx, 1);
+      } else {
+        const r = genericRackOf(type);
+        project.rackSelections.push({
+          id:newRackSelectionId(), manufacturer:"generic", type:r.type, seriesLabel:r.label,
+          bayWidth:r.bayWidth, depth:r.depth, height:r.height, levels:r.levels, palletsPerLevel:r.palletsPerLevel, defaultBays:4
+        });
+      }
+      renderWizStep(4); scheduleSave();
+    });
+  });
+
+  document.querySelectorAll('#rackMeasureCard input[data-rsid]').forEach(input => {
+    input.addEventListener("input", e => {
+      const rsid = e.target.dataset.rsid, key = e.target.dataset.key;
+      const rs = project.rackSelections.find(s => s.id === rsid);
+      if(!rs) return;
+      const isInt = ["levels","palletsPerLevel","defaultBays"].includes(key);
+      const val = isInt ? parseInt(e.target.value) : parseFloat(e.target.value);
+      if(!isNaN(val)) rs[key] = val;
+      scheduleSave();
+    });
+  });
+}
+
+/* =========================================================
+   12. LAYOUT-SKÆRM (TRIN 5) — OPSÆTNING
+   ========================================================= */
+
+let layoutScreenInited = false;
+
+function enterLayoutScreen(){
+  if(!layoutScreenInited){
+    initCanvas();
+    buildPalettes();
+    wireLayoutToolbar();
+    layoutScreenInited = true;
+  }
+  buildRackPalette(); // reol-valget kan være ændret siden sidste besøg på Trin 5
+  resizeCanvas();
+  fitToObjects();
+  runConflictCheck();
+  updateResultBar();
+  syncProps();
+}
+
+function buildPalettes(){
+  const buildingEl = document.getElementById("paletteBuilding");
+  const infraEl = document.getElementById("paletteInfra");
+  const areasEl = document.getElementById("paletteAreas");
+
+  function paletteItem(td){
+    const el = document.createElement("div");
+    el.className = "palette-item";
+    el.dataset.type = td.type;
+    el.innerHTML = `<div class="picon">${td.icon||"▪"}</div><div class="swatch" style="background:${td.color};"></div><div class="plabel">${td.label}</div><div class="pdim">${td.w}×${td.d}m</div>`;
+    el.addEventListener("pointerdown", ev => startPaletteDrag(ev, td, el));
+    el.addEventListener("click", () => armPlacement(td, el));
+    return el;
+  }
+  BUILDING_TYPES.forEach(td => buildingEl.appendChild(paletteItem(td)));
+  INFRA_TYPES.forEach(td => infraEl.appendChild(paletteItem(td)));
+  AREA_TYPES.forEach(td => areasEl.appendChild(paletteItem(td)));
+}
+
+// Ét paletteelement pr. AKTIV reoltype, så sælgeren kan placere enhver af de valgte
+// reoltyper manuelt — ikke kun "den ene" reol som i tidligere versioner.
+function buildRackPalette(){
+  const racksEl = document.getElementById("paletteRacks");
+  racksEl.innerHTML = "";
+  const selections = getRackSelections();
+  selections.forEach(rs => {
+    const bays = rs.defaultBays || 4;
+    const rackTd = {
+      type: rs.type,
+      label: rs.seriesLabel || (genericRackOf(rs.type)||{label:"Reol"}).label,
+      color: (genericRackOf(rs.type)||{color:"#3A9D5D"}).color,
+      w: rs.bayWidth * bays,
+      d: rs.depth,
+      isRackPlacement: true,
+      rackSelection: rs
+    };
+    const el = document.createElement("div");
+    el.className = "palette-item";
+    el.innerHTML = `<div class="picon">🗄️</div><div class="swatch" style="background:${rackTd.color};"></div><div class="plabel">${escapeHtml(rackTd.label)} (${bays} fag)</div><div class="pdim">${rs.bayWidth}×${rs.depth}m/fag</div>`;
+    el.addEventListener("pointerdown", ev => startPaletteDrag(ev, rackTd, el));
+    el.addEventListener("click", () => armPlacement(rackTd, el));
+    racksEl.appendChild(el);
+  });
+  if(!selections.length){
+    racksEl.innerHTML = `<div style="font-size:11.5px; color:var(--text-mute); padding:6px 4px;">Ingen reoltyper valgt endnu — gå til Trin 4.</div>`;
+  }
+}
+
+function wireLayoutToolbar(){
+  document.getElementById("btnBackToGuide").addEventListener("click", () => goToStep(4));
+  document.getElementById("btnLaySave").addEventListener("click", () => saveProjectLocal(true));
+  document.getElementById("btnUndo").addEventListener("click", undo);
+  document.getElementById("btnRedo").addEventListener("click", redo);
+  document.getElementById("btnGrid").addEventListener("click", e => { state.showGrid=!state.showGrid; e.target.classList.toggle("active",state.showGrid); requestRender(); });
+  document.getElementById("btnSnap").addEventListener("click", e => { state.snapEnabled=!state.snapEnabled; e.target.classList.toggle("active",state.snapEnabled); });
+  document.getElementById("btnZoomIn").addEventListener("click", () => zoomBy(1.2));
+  document.getElementById("btnZoomOut").addEventListener("click", () => zoomBy(1/1.2));
+  document.getElementById("btnZoomReset").addEventListener("click", () => { state.camera.zoom=1; requestRender(); updateZoomLabel(); });
+  document.getElementById("btnFit").addEventListener("click", fitToObjects);
+  document.getElementById("btnMeasureMode").addEventListener("click", e => { state.measureMode=!state.measureMode; e.target.classList.toggle("active",state.measureMode); });
+  document.getElementById("btnGenerateLayout").addEventListener("click", generateLayoutProposal);
+  document.getElementById("btnResetProposal").addEventListener("click", resetLayoutProposal);
+  document.getElementById("btnAutoFixAll").addEventListener("click", autoFixAllConflicts);
+  document.getElementById("btnGoResult").addEventListener("click", () => goToStep(6));
+
+  document.getElementById("btnCloseConflictModal").addEventListener("click", () => document.getElementById("conflictModalBackdrop").classList.remove("active"));
+  document.getElementById("conflictModalBody").addEventListener("click", e => {
+    const viewBtn = e.target.closest("[data-conflict-view]");
+    if(viewBtn){
+      zoomToObject(viewBtn.dataset.conflictView);
+      document.getElementById("conflictModalBackdrop").classList.remove("active");
+      return;
+    }
+    const fixBtn = e.target.closest("[data-conflict-fix]");
+    if(fixBtn){
+      const obj = project.objects.find(o => o.id === fixBtn.dataset.conflictFix);
+      if(obj && obj.conflicts && obj.conflicts.length){
+        pushUndo();
+        applyOneFix(obj, obj.conflicts[0]);
+        runConflictCheck(); updateResultBar(); render(); scheduleSave();
+        openConflictPanel(); // opdatér listen
+      }
+    }
+  });
+  document.getElementById("btnAutofixApprove").addEventListener("click", () => document.getElementById("autofixModalBackdrop").classList.remove("active"));
+  document.getElementById("btnAutofixUndo").addEventListener("click", () => {
+    undo();
+    document.getElementById("autofixModalBackdrop").classList.remove("active");
+  });
+
+  window.addEventListener("keydown", e => {
+    if(!document.getElementById("layoutScreen").classList.contains("active")) return;
+    if(e.key === "Delete" || e.key === "Backspace"){ if(document.activeElement.tagName!=="INPUT") deleteSelected(); }
+    if(e.key === "Escape") cancelPlacement();
+    if((e.ctrlKey||e.metaKey) && e.key==="z"){ e.preventDefault(); undo(); }
+    if((e.ctrlKey||e.metaKey) && e.key==="y"){ e.preventDefault(); redo(); }
+  });
+
+  // ---- Tablet/mobil: skjul/vis venstre palette og højre egenskabspanel, så tegnefladen
+  // altid kan prioriteres på mindre skærme ("iPad-layoutet skal føles som en rigtig app"). ----
+  document.getElementById("btnTogglePalette").addEventListener("click", () => {
+    const paletteEl = document.querySelector(".lay-palette");
+    if(paletteEl.classList.contains("panel-open")) closeAllPanels(); else openPanel(paletteEl);
+  });
+  document.getElementById("btnToggleProps").addEventListener("click", () => {
+    const propsWrapEl = document.querySelector(".lay-props-wrap");
+    if(propsWrapEl.classList.contains("panel-open")) closeAllPanels(); else openPanel(propsWrapEl);
+  });
+  document.getElementById("btnClosePalette").addEventListener("click", closeAllPanels);
+  document.getElementById("btnCloseProps").addEventListener("click", closeAllPanels);
+  document.getElementById("panelBackdrop").addEventListener("click", closeAllPanels);
+  window.addEventListener("resize", () => { if(window.innerWidth > 900) closeAllPanels(); });
+}
+
+// Globale, så armPlacement() også kan lukke panelerne automatisk på mobil/tablet,
+// når sælgeren har valgt et objekt og skal have fuld tegneflade til at trykke det ned.
+function closeAllPanels(){
+  const paletteEl = document.querySelector(".lay-palette");
+  const propsWrapEl = document.querySelector(".lay-props-wrap");
+  const backdropEl = document.getElementById("panelBackdrop");
+  if(!paletteEl) return;
+  paletteEl.classList.remove("panel-open");
+  propsWrapEl.classList.remove("panel-open");
+  backdropEl.classList.remove("active");
+}
+function openPanel(el){
+  closeAllPanels();
+  el.classList.add("panel-open");
+  document.getElementById("panelBackdrop").classList.add("active");
+  requestAnimationFrame(resizeCanvas);
+}
+
+/* =========================================================
+   13. LAYOUTGENERATOR — REGELBASERET "BALANCERET FORSLAG"
+   VIGTIGT: Ikke AI. Ren regelbaseret pladsberegning.
+   ========================================================= */
+
+function resetLayoutProposal(){
+  pushUndo();
+  project.objects = project.objects.filter(o => !o.generated);
+  render(); runConflictCheck(); updateResultBar();
+}
+
+// PROPOSAL_TYPES — arkitekturen er forberedt til flere forslagstyper senere.
+// I v0.2.0 genereres kun ét forslag ("balanced"); "max" og "flow" er reserveret til en senere version.
+const PROPOSAL_TYPES = { BALANCED:"balanced", MAX:"max", FLOW:"flow" };
+
+function generateLayoutProposal(){
+  const w = project.warehouse;
+  if(!(w.length>0 && w.width>0)){ alert("Angiv lagerets mål i Trin 2 først."); return; }
+  runGenerationWowSequence(() => computeLayoutProposal(PROPOSAL_TYPES.BALANCED));
+}
+
+// Kort, letvægts "wow"-sekvens der viser fremdrift, mens forslaget beregnes.
+// Ren UI-tilbagemelding — selve beregningen er stadig regelbaseret, ikke AI.
+function runGenerationWowSequence(computeFn){
+  const overlay = document.getElementById("genOverlay");
+  const card = document.getElementById("genOverlayCard");
+  const textEl = document.getElementById("genOverlayText");
+  const steps = ["Analyserer lager...", "Beregner truckgange...", "Optimerer kapacitet...", "Finder bedste løsning..."];
+  overlay.classList.add("active");
+  card.classList.remove("genOverlay-done");
+  let i = 0;
+  textEl.textContent = steps[0];
+  const stepMs = 480; // 4 trin × ~480ms ≈ knap 2 sekunder
+  const interval = setInterval(() => {
+    i++;
+    if(i < steps.length){ textEl.textContent = steps[i]; }
+  }, stepMs);
+  setTimeout(() => {
+    clearInterval(interval);
+    computeFn();
+    card.classList.add("genOverlay-done");
+    textEl.textContent = "Layoutforslag klar.";
+    setTimeout(() => { overlay.classList.remove("active"); }, 700);
+  }, stepMs * steps.length);
+}
+
+function computeLayoutProposal(proposalType){
+  const w = project.warehouse;
+  pushUndo();
+  project.objects = project.objects.filter(o => !o.generated);
+  // proposalType er forberedt til fremtidig forgrening (Maksimal kapacitet / Bedst flow).
+  // I denne version anvendes samme regelbaserede, balancerede algoritme uanset værdi.
+
+  const truck = getSelectedTruck();
+  const aisle = truck.recommendedAisle;
+  const selections = getRackSelections();
+  if(!selections.length){ render(); runConflictCheck(); updateResultBar(); scheduleSave(); return; }
+  const wallClearance = 0.3;
+  const L = w.length, W = w.width;
+
+  // Byggrænser (indvendigt, fratrukket vægtykkelse + margin)
+  const minX = wallClearance, maxX = L - wallClearance;
+  const minY = wallClearance, maxY = W - wallClearance;
+
+  // Forhindringer: søjler, porte, brandveje, flugtveje, forbudte områder (ikke vægge/racks)
+  const obstacles = project.objects.filter(o => o.kind==="nonrack" && !o.autoWall &&
+    (o.isColumn || o.type==="port" || o.type==="dor" || o.isLane || o.isRestricted));
+
+  // Blandede reolsystemer: rækkerne fordeles på tur mellem alle aktive reoltyper (round-robin),
+  // så generatoren rent faktisk anvender kombinationen af valgte typer og ikke kun én.
+  let y = minY;
+  let rowsPlaced = 0;
+  let selIdx = 0;
+  const maxRows = 200;
+
+  while(rowsPlaced < maxRows){
+    const rs = selections[selIdx % selections.length];
+    const rowDepth = rs.depth;
+    if(y + rowDepth > maxY) break;
+    const rowMinY = y, rowMaxY = y + rowDepth;
+
+    // Find forhindringer der overlapper denne rækkes Y-bånd
+    const blockers = obstacles.filter(ob => {
+      const b = getAABB(ob);
+      return !(b.maxY <= rowMinY || b.minY >= rowMaxY);
+    }).map(ob => getAABB(ob)).sort((a,b) => a.minX - b.minX);
+
+    // Byg frie X-segmenter i [minX, maxX] uden om forhindringer (+ margin)
+    const segMargin = 0.2;
+    let segments = [{ start:minX, end:maxX }];
+    blockers.forEach(b => {
+      const bs = Math.max(minX, b.minX - segMargin), be = Math.min(maxX, b.maxX + segMargin);
+      const next = [];
+      segments.forEach(seg => {
+        if(be <= seg.start || bs >= seg.end){ next.push(seg); return; }
+        if(bs > seg.start) next.push({ start:seg.start, end:bs });
+        if(be < seg.end) next.push({ start:be, end:seg.end });
+      });
+      segments = next;
+    });
+
+    segments.forEach(seg => {
+      const segLen = seg.end - seg.start;
+      const bays = Math.floor(segLen / rs.bayWidth);
+      if(bays >= 1){
+        const obj = createRackObject(bays, seg.start, rowMinY, 0, rs);
+        obj.generated = true;
+        project.objects.push(obj);
+      }
+    });
+
+    y += rowDepth + aisle;
+    rowsPlaced++;
+    selIdx++;
+  }
+
+  render(); runConflictCheck(); updateResultBar(); scheduleSave();
+}
+
+/* =========================================================
+   14. KONFLIKTKONTROL
+   ========================================================= */
+
+function runConflictCheck(){
+  const w = project.warehouse;
+  const L = w.length||0, W = w.width||0;
+  const truck = getSelectedTruck();
+  const racks = project.objects.filter(o => o.kind==="rack");
+  const obstacles = project.objects.filter(o => o.kind==="nonrack" && !o.autoWall);
+  const freeHeight = w.height || 999;
+
+  project.objects.forEach(o => { o.conflicts = []; });
+
+  racks.forEach(r => {
+    const rb = getAABB(r);
+    // uden for lager
+    if(L && W && (rb.minX < -0.01 || rb.minY < -0.01 || rb.maxX > L+0.01 || rb.maxY > W+0.01)){
+      r.conflicts.push({level:"red", message:"Reol uden for lageret"});
+    }
+    // reolhøjde over fri lagerhøjde
+    if(r.height > freeHeight){
+      r.conflicts.push({level:"red", message:"Reolhøjde overstiger fri lagerhøjde"});
+    }
+    obstacles.forEach(ob => {
+      const ob2 = getAABB(ob);
+      if(!aabbOverlap(rb, ob2)) return;
+      if(ob.isColumn) r.conflicts.push({level:"red", message:"Reol overlapper en søjle", relatedId:ob.id});
+      else if(ob.type==="port") r.conflicts.push({level:"red", message:"Reol blokerer en port", relatedId:ob.id});
+      else if(ob.type==="dor") r.conflicts.push({level:"warn", message:"Reol tæt på/blokerer en dør", relatedId:ob.id});
+      else if(ob.isLane) r.conflicts.push({level:"red", message:"Reol i brandvej/flugtvej", relatedId:ob.id});
+      else if(ob.isRestricted) r.conflicts.push({level:"red", message:"Reol i forbudt område", relatedId:ob.id});
+    });
+    // manglende afstand til væg (< 0.1 m regnes som konflikt, kun advarsel)
+    const walls = project.objects.filter(o=>o.autoWall);
+    walls.forEach(wallObj => {
+      const wb = getAABB(wallObj);
+      if(aabbOverlap(rb, wb, 0.05)){
+        r.conflicts.push({level:"warn", message:"Meget lille afstand til væg", relatedId:wallObj.id});
+      }
+    });
+  });
+
+  // overlap mellem reoler
+  for(let i=0;i<racks.length;i++){
+    for(let j=i+1;j<racks.length;j++){
+      const a = getAABB(racks[i]), b = getAABB(racks[j]);
+      if(aabbOverlap(a,b,-0.02)){
+        racks[i].conflicts.push({level:"red", message:"Overlap med anden reol", relatedId:racks[j].id});
+        racks[j].conflicts.push({level:"red", message:"Overlap med anden reol", relatedId:racks[i].id});
+      }
+    }
+  }
+
+  // for smal truckgang mellem parallelle rækker (samme orientering, tilstødende Y-bånd)
+  const byY = racks.slice().sort((a,b)=>a.y-b.y);
+  for(let i=0;i<byY.length;i++){
+    for(let j=i+1;j<byY.length;j++){
+      const a = byY[i], b = byY[j];
+      if(Math.abs(a.rotation - b.rotation) > 1) continue;
+      const gapY = b.y - (a.y + a.depth);
+      if(gapY > 0.05 && gapY < truck.recommendedAisle - 0.05){
+        const overlapX = !(a.x+a.width <= b.x || b.x+b.width <= a.x);
+        if(overlapX){
+          a.conflicts.push({level:"warn", message:"Gangbredde til næste række er smallere end anbefalet ("+gapY.toFixed(2)+" m < "+truck.recommendedAisle.toFixed(2)+" m)", relatedId:b.id});
+        }
+      }
+    }
+  }
+
+  render();
+}
+
+/* =========================================================
+   15. RESULTATBJÆLKE & BEREGNINGER
+   ========================================================= */
+
+function computeCalculations(){
+  const racks = project.objects.filter(o => o.kind==="rack");
+  const totalBays = racks.reduce((s,r)=>s+r.bays,0);
+  const totalPallets = racks.reduce((s,r)=>s+rackCapacity(r),0);
+  const floorArea = (project.warehouse.length||0) * (project.warehouse.width||0);
+  const rackFootprint = racks.reduce((s,r)=>s+r.width*r.depth,0);
+  const utilization = floorArea ? (rackFootprint/floorArea*100) : 0;
+  const conflicts = project.objects.reduce((s,o)=>s+(o.conflicts?o.conflicts.length:0),0);
+  const redConflicts = project.objects.reduce((s,o)=>s+((o.conflicts||[]).filter(c=>c.level==="red").length),0);
+  const truck = getSelectedTruck();
+  project.calculations = {
+    totalBays, totalPallets, floorArea, utilization, conflicts, redConflicts,
+    truckName: truck.name, aisle: truck.recommendedAisle, rackCount: racks.length
+  };
+  return project.calculations;
+}
+
+// Regelbaseret, kort anbefaling ud fra de beregnede nøgletal.
+// NB: Bevidst kaldt "Automatisk anbefaling" og ikke "AI-anbefaling" — anbefalingen er
+// ren regelbaseret logik ud fra tærskelværdier, ikke en AI-model, og skal ikke fremstilles
+// som om den er det (samme princip som "Automatiske forbedringsforslag" i LayoutScan Pro).
+function buildRecommendationText(){
+  const calc = computeCalculations();
+  if(calc.rackCount === 0){
+    return "Der er endnu ikke genereret et layoutforslag. Brug \"Generér layoutforslag\" i Trin 5 for at få en anbefaling.";
+  }
+  const parts = [];
+  if(calc.redConflicts > 0){
+    parts.push(`${calc.redConflicts} kritiske konflikter bør løses, før layoutet præsenteres for kunden.`);
+  } else if(calc.conflicts > 0){
+    parts.push(`${calc.conflicts} forhold bør kontrolleres, men der er ikke fundet kritiske konflikter.`);
+  } else {
+    parts.push("Ingen konflikter er fundet i det aktuelle layout.");
+  }
+  if(calc.utilization < 25){
+    parts.push(`Arealudnyttelsen på ${calc.utilization.toFixed(0)}% er lav — der er sandsynligvis plads til flere reolrækker.`);
+  } else if(calc.utilization > 65){
+    parts.push(`Arealudnyttelsen på ${calc.utilization.toFixed(0)}% er høj — kontrollér at der er tilstrækkelig plads til drift, vedligehold og fremtidig fleksibilitet.`);
+  } else {
+    parts.push(`Arealudnyttelsen på ${calc.utilization.toFixed(0)}% vurderes balanceret for den valgte reoltype og truck.`);
+  }
+  parts.push(`Layoutet er dimensioneret til ${calc.truckName} med en gangbredde på ${calc.aisle.toFixed(2)} m.`);
+  return parts.join(" ");
+}
+
+function updateResultBar(){
+  const calc = computeCalculations();
+  const bar = document.getElementById("resultBar");
+  if(!bar) return;
+  let statusCls = "ok", statusText = "Ingen fundne konflikter";
+  if(calc.redConflicts>0){ statusCls="bad"; statusText="Skal rettes ("+calc.redConflicts+")"; }
+  else if(calc.conflicts>0){ statusCls="warn"; statusText="Bør kontrolleres ("+calc.conflicts+")"; }
+  bar.innerHTML = `
+    <div class="rb-item"><b>${calc.totalPallets}</b><span>Pallepladser</span></div>
+    <div class="rb-item"><b>${calc.totalBays}</b><span>Reolfag</span></div>
+    <div class="rb-item"><b>${calc.utilization.toFixed(0)}%</b><span>Arealudnyttelse</span></div>
+    <div class="rb-item"><b>${calc.truckName}</b><span>Valgt truck</span></div>
+    <div class="rb-item"><b>${calc.aisle.toFixed(2)} m</b><span>Gangbredde</span></div>
+    <div class="rb-item"><b>${calc.conflicts}</b><span>Konflikter</span></div>
+    <button type="button" class="statuspill clickable ${statusCls}" id="btnOpenConflictPanel">${statusCls==="ok"?"🟢":statusCls==="warn"?"🟡":"🔴"} ${statusText}</button>
+  `;
+  const btn = document.getElementById("btnOpenConflictPanel");
+  if(btn) btn.addEventListener("click", openConflictPanel);
+}
+
+/* =========================================================
+   KONFLIKTPANEL — klikbar status viser en liste med "Vis" og "Ret automatisk"
+   ========================================================= */
+
+function getConflictList(){
+  const list = [];
+  project.objects.forEach(o => {
+    (o.conflicts||[]).forEach(c => list.push({ objId:o.id, label:o.label, level:c.level, message:c.message, relatedId:c.relatedId }));
+  });
+  return list;
+}
+
+function openConflictPanel(){
+  const list = getConflictList();
+  const body = document.getElementById("conflictModalBody");
+  if(!list.length){
+    body.innerHTML = `<div style="font-size:13px; color:var(--text-mute); padding:10px 0;">🟢 Ingen konflikter fundet.</div>`;
+  } else {
+    body.innerHTML = `<div style="font-size:12.5px; color:var(--text-mute); margin-bottom:6px;">${list.length} konflikt${list.length===1?"":"er"} fundet.</div>` +
+      list.map((c,i) => `
+        <div class="conflict-row">
+          <div class="conflict-row-num">${i+1}.</div>
+          <div class="conflict-row-body">
+            <div class="conflict-row-msg"><b>${escapeHtml(c.label)}</b> — ${escapeHtml(c.message)}</div>
+            <div class="conflict-row-actions">
+              <button class="btn small" data-conflict-view="${c.objId}">Vis</button>
+              <button class="btn small primary" data-conflict-fix="${c.objId}" data-conflict-index="${i}">Ret automatisk</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+  }
+  document.getElementById("conflictModalBackdrop").classList.add("active");
+}
+
+// Zoomer, centrerer og markerer objektet, så sælgeren kan se præcis hvad problemet er.
+function zoomToObject(id){
+  const obj = project.objects.find(o => o.id === id);
+  if(!obj || !wrap) return;
+  selectObject(obj.id, false);
+  const rect = wrap.getBoundingClientRect();
+  const bb = getAABB(obj);
+  const bw = Math.max(bb.maxX-bb.minX, 1.5), bh = Math.max(bb.maxY-bb.minY, 1.5);
+  const margin = 70;
+  const scaleX = (rect.width - margin*2) / bw, scaleY = (rect.height - margin*2) / bh;
+  state.camera.zoom = clamp(Math.min(scaleX, scaleY)/PPM, 0.15, 6);
+  const es = effScale();
+  state.camera.panX = rect.width/2 - bb.cx*es;
+  state.camera.panY = rect.height/2 - bb.cy*es;
+  requestRender(); updateZoomLabel(); syncProps();
+}
+
+/* =========================================================
+   AUTOMATISK RETTELSE ("Ret automatisk")
+   Regelbaseret, bedste-forsøgs-rettelse — IKKE en fuldstændig løser.
+   Forsøger i nævnte rækkefølge: flyt reolen fri, afkort den, eller som sidste
+   udvej fjern den — og forsøger altid at bevare valgt truck og reolkombination.
+   ========================================================= */
+
+function fixOutOfBounds(obj){
+  const L = project.warehouse.length||0, W = project.warehouse.width||0, margin = 0.3;
+  const oldX = obj.x, oldY = obj.y;
+  obj.x = clamp(obj.x, margin, Math.max(margin, L - margin - obj.width));
+  obj.y = clamp(obj.y, margin, Math.max(margin, W - margin - obj.depth));
+  if(Math.abs(obj.x-oldX) < 0.01 && Math.abs(obj.y-oldY) < 0.01) return null;
+  touch(obj);
+  return `${obj.label} flyttet tilbage inden for lagerets grænser`;
+}
+
+function fixObstacleOverlap(obj){
+  const obstacles = project.objects.filter(o => o.kind==="nonrack" && !o.autoWall &&
+    (o.isColumn || o.type==="port" || o.type==="dor" || o.isLane || o.isRestricted));
+  const L = project.warehouse.length||0, margin = 0.3;
+  const step = 0.1, maxShift = 3.0;
+  const origX = obj.x;
+  for(let d = step; d <= maxShift; d += step){
+    for(const dir of [1,-1]){
+      const candX = origX + dir*d;
+      if(candX < margin || candX + obj.width > L - margin) continue;
+      const testBB = { minX:candX, maxX:candX+obj.width, minY:obj.y, maxY:obj.y+obj.depth };
+      const hits = obstacles.some(ob => aabbOverlap(testBB, getAABB(ob)));
+      if(!hits){
+        obj.x = candX; touch(obj);
+        return `${obj.label} flyttet ${d.toFixed(2)} m for at frigøre forhindringen`;
+      }
+    }
+  }
+  // Kunne ikke finde en fri position ved forskydning — prøv at afkorte antal fag
+  while(obj.bays > 1){
+    obj.bays -= 1;
+    obj.width = obj.bays * obj.bayWidth;
+    touch(obj);
+    const testBB = getAABB(obj);
+    if(!obstacles.some(ob => aabbOverlap(testBB, getAABB(ob)))){
+      return `${obj.label} afkortet til ${obj.bays} fag for at frigøre forhindringen`;
+    }
+  }
+  // Sidste udvej: fjern reolsegmentet
+  const capacityLost = rackCapacity(obj);
+  project.objects = project.objects.filter(o => o !== obj);
+  return `${obj.label} fjernet — kunne ikke placeres uden konflikt (kapacitet reduceret med ${capacityLost} pallepladser)`;
+}
+
+function fixRackOverlap(obj, conflict){
+  const other = project.objects.find(o => o.id === conflict.relatedId);
+  if(!other) return null;
+  const ob2 = getAABB(other);
+  const oldY = obj.y;
+  obj.y = ob2.maxY + 0.05;
+  touch(obj);
+  return `${obj.label} flyttet ${(obj.y-oldY).toFixed(2)} m for at fjerne overlap med ${other.label}`;
+}
+
+function fixNarrowAisle(obj, conflict){
+  const other = project.objects.find(o => o.id === conflict.relatedId);
+  if(!other) return null;
+  const truck = getSelectedTruck();
+  const gapY = other.y - (obj.y + obj.depth);
+  const neededDelta = (truck.recommendedAisle - gapY) + 0.02;
+  const W = project.warehouse.width||0, margin = 0.3;
+  if(other.y + neededDelta + other.depth > W - margin){
+    const capacityLost = rackCapacity(other);
+    project.objects = project.objects.filter(o => o !== other);
+    return `${other.label} fjernet for at sikre gangbredde på ${truck.recommendedAisle.toFixed(2)} m (kapacitet reduceret med ${capacityLost} pallepladser)`;
+  }
+  other.y += neededDelta; touch(other);
+  return `Gangbredde til ${other.label} øget til ${truck.recommendedAisle.toFixed(2)} m (rykket ${neededDelta.toFixed(2)} m)`;
+}
+
+function fixWallClearance(obj){
+  const walls = project.objects.filter(o => o.autoWall);
+  const ob = getAABB(obj);
+  let moved = false;
+  walls.forEach(wallObj => {
+    const wb = getAABB(wallObj);
+    if(aabbOverlap(ob, wb, 0.05)){
+      if((wb.maxX-wb.minX) > (wb.maxY-wb.minY)){ obj.y += (wb.cy < ob.cy) ? 0.1 : -0.1; }
+      else { obj.x += (wb.cx < ob.cx) ? 0.1 : -0.1; }
+      moved = true;
+    }
+  });
+  if(!moved) return null;
+  touch(obj);
+  return `${obj.label} rykket 0,10 m væk fra væggen`;
+}
+
+function applyOneFix(obj, conflict){
+  const msg = conflict.message;
+  if(msg.includes("uden for lageret")) return fixOutOfBounds(obj);
+  if(msg.includes("søjle") || msg.includes("port") || msg.includes("brandvej/flugtvej") || msg.includes("forbudt område")) return fixObstacleOverlap(obj);
+  if(msg.includes("Overlap med anden reol")) return fixRackOverlap(obj, conflict);
+  if(msg.includes("Gangbredde")) return fixNarrowAisle(obj, conflict);
+  if(msg.includes("afstand til væg")) return fixWallClearance(obj);
+  return null; // fx "Reolhøjde overstiger fri lagerhøjde" kræver ændret reolvalg i Trin 4 og kan ikke rettes geometrisk
+}
+
+// Kører gentagne rettelsespas, indtil der ikke er flere løsbare konflikter, eller et
+// sikkerhedsloft er nået. Bevarer altid det valgte truck og den valgte reolkombination —
+// der ændres kun på reolernes placering, længde eller antal, aldrig på selve valget.
+function autoFixAllConflicts(){
+  const before = computeCalculations();
+  pushUndo(); // "Gem layout" inden rettelse
+  runConflictCheck();
+  const changeLog = [];
+  let pass = 0;
+  const maxPasses = 60;
+  while(pass < maxPasses){
+    const conflictObj = project.objects.find(o => o.kind==="rack" && o.conflicts && o.conflicts.length && !o._autofixSkipped);
+    if(!conflictObj) break;
+    const conflict = conflictObj.conflicts[0];
+    const msg = applyOneFix(conflictObj, conflict);
+    if(msg) changeLog.push(msg);
+    else conflictObj._autofixSkipped = true;
+    runConflictCheck();
+    pass++;
+  }
+  project.objects.forEach(o => { delete o._autofixSkipped; });
+  runConflictCheck(); updateResultBar(); render(); scheduleSave();
+  const after = computeCalculations();
+  showAutoFixSummary(before, after, changeLog);
+}
+
+function showAutoFixSummary(before, after, changeLog){
+  const body = document.getElementById("autofixModalBody");
+  const capacityDelta = after.totalPallets - before.totalPallets;
+  const capacityText = capacityDelta === 0 ? "uændret" : (capacityDelta > 0 ? "+" : "") + capacityDelta + " pallepladser";
+  body.innerHTML = `
+    <div style="font-size:13px; line-height:1.7; max-height:260px; overflow:auto;">
+      ${changeLog.length ? changeLog.map(c => `<div>• ${escapeHtml(c)}</div>`).join("") : "<div>Ingen automatiske ændringer var nødvendige.</div>"}
+    </div>
+    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border); font-size:12.5px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div>Konflikter før: <b>${before.conflicts}</b></div>
+      <div>Konflikter nu: <b>${after.conflicts}</b></div>
+      <div>Gangbredde: <b>${after.aisle.toFixed(2)} m</b></div>
+      <div>Kapacitetsændring: <b>${capacityText}</b></div>
+    </div>
+    ${after.conflicts>0 ? `<div class="res-disclaimer" style="margin-top:12px;">⚠ ${after.conflicts} konflikt(er) kunne ikke rettes automatisk og kræver manuel gennemgang (fx reolhøjde over fri lagerhøjde, som kræver et andet reolvalg i Trin 4).</div>` : ``}
+  `;
+  document.getElementById("autofixModalBackdrop").classList.add("active");
+}
+
+/* =========================================================
+   16. RESULTAT-SKÆRM (TRIN 6)
+   ========================================================= */
+
+function renderResultScreen(){
+  const calc = computeCalculations();
+  const c = project.customer;
+  const selections = getRackSelections();
+  const el = document.getElementById("resWrap");
+  const conclusion = `Det foreslåede layout giver en beregnet kapacitet på ${calc.totalPallets} pallepladser fordelt på ${calc.totalBays} reolfag. Layoutet er baseret på den valgte trucktype (${calc.truckName}) og en gangbredde på ${calc.aisle.toFixed(2)} meter. Forslaget er et dispositionsforslag og skal teknisk verificeres før endeligt tilbud og installation.`;
+  const seriesSummary = selections.map(s => escapeHtml(s.seriesLabel)).join(" · ") || "—";
+  const manufacturerSummary = selections.length ? getManufacturerLabel(selections[0].manufacturer) : "—";
+  const statusSummary = selections.length ? getRackStatusLabel(selections[0].manufacturer) : "—";
+
+  el.innerHTML = `
+    <div class="res-card">
+      <div class="res-title">${escapeHtml(c.name||"Kundeprojekt")}</div>
+      <div class="res-meta">Projekt ${escapeHtml(c.projectNo||"—")} · ${c.projectDate||""} · Reoler A/S ${c.seller?("· sælger: "+escapeHtml(c.seller)):""}</div>
+      <div style="font-size:12px; color:var(--text-mute); margin-bottom:10px;">
+        Producent: <b style="color:var(--navy);">${manufacturerSummary}</b>
+        · Produktserier: <b style="color:var(--navy);">${seriesSummary}</b>
+        · Status: ${escapeHtml(statusSummary)}
+      </div>
+      <div class="res-imgwrap"><canvas id="resSnapshot" style="width:100%; display:block;"></canvas></div>
+      <div class="res-kpis">
+        <div class="res-kpi"><b>${(project.warehouse.length*project.warehouse.width).toFixed(0)}</b><span>m² lagerareal</span></div>
+        <div class="res-kpi"><b>${calc.rackCount}</b><span>Reoler</span></div>
+        <div class="res-kpi"><b>${calc.totalBays}</b><span>Reolfag</span></div>
+        <div class="res-kpi"><b>${selections.length}</b><span>Aktive reoltyper</span></div>
+        <div class="res-kpi"><b>${calc.totalPallets}</b><span>Pallepladser</span></div>
+        <div class="res-kpi"><b>${calc.utilization.toFixed(0)}%</b><span>Arealudnyttelse</span></div>
+      </div>
+    </div>
+    <div class="res-card">
+      <div class="card-title">Konklusion</div>
+      <div class="res-conclusion">${conclusion}</div>
+      <div class="res-disclaimer">Dette er et vejledende dispositionsforslag. Belastninger, montage, gulvforhold, brandsikkerhed og konstruktive krav skal godkendes af Reoler A/S før levering.</div>
+      ${calc.conflicts>0 ? `<div class="res-disclaimer" style="margin-top:8px;">⚠ Der er registreret ${calc.conflicts} forbehold/konflikter i layoutet (${calc.redConflicts} kritiske). Se Layout-skærmen for detaljer.</div>` : ``}
+    </div>
+    <div class="res-card">
+      <div class="card-title">Automatisk anbefaling <span class="badge">Regelbaseret — ikke AI</span></div>
+      <div class="res-conclusion">${escapeHtml(buildRecommendationText())}</div>
+    </div>
+    <div class="res-card">
+      <div class="card-title">Foreløbig stykliste</div>
+      ${buildStyklisteHtml()}
+      <div style="font-size:11px; color:var(--text-mute); margin-top:10px;">Foreløbig stykliste — skal teknisk verificeres.</div>
+    </div>
+  `;
+  drawSnapshotToCanvas(document.getElementById("resSnapshot"));
+}
+
+function buildStykliste(){
+  const racks = project.objects.filter(o=>o.kind==="rack");
+  const groups = {};
+  racks.forEach(r => {
+    const key = (r.manufacturer||"generic") + "::" + r.type;
+    if(!groups[key]) groups[key] = {
+      type:r.label, manufacturer:r.manufacturerLabel||getManufacturerLabel(r.manufacturer), status:r.productStatus||getRackStatusLabel(r.manufacturer),
+      rows:0, bays:0, levels:r.levels, totalLength:0, capacity:0
+    };
+    groups[key].rows++; groups[key].bays += r.bays; groups[key].totalLength += r.width; groups[key].capacity += rackCapacity(r);
+  });
+  return Object.values(groups);
+}
+function buildStyklisteHtml(){
+  const rows = buildStykliste();
+  if(!rows.length) return `<div style="font-size:12px; color:var(--text-mute);">Ingen reoler placeret endnu.</div>`;
+  return `<table class="stykliste"><thead><tr>
+      <th>Producent</th><th>Reoltype</th><th>Antal rækker</th><th>Antal fag</th><th>Niveauer</th><th>Samlet reollængde</th><th>Pallepladser</th><th>Status</th>
+    </tr></thead><tbody>
+      ${rows.map(r=>`<tr><td>${escapeHtml(r.manufacturer)}</td><td>${escapeHtml(r.type)}</td><td>${r.rows}</td><td>${r.bays}</td><td>${r.levels}</td><td>${r.totalLength.toFixed(1)} m</td><td>${r.capacity}</td><td>${escapeHtml(r.status)}</td></tr>`).join("")}
+    </tbody></table>`;
+}
+
+function drawSnapshotToCanvas(targetCanvas){
+  if(!targetCanvas) return;
+  const wM = project.warehouse.length||20, hM = project.warehouse.width||15;
+  const pad = 1.4;
+  const pxPerM = 26;
+  targetCanvas.width = Math.round((wM+pad*2)*pxPerM);
+  targetCanvas.height = Math.round((hM+pad*2)*pxPerM);
+
+  // Midlertidigt "lån" den fælles tegnemotor (samme render() som selve tegnefladen bruger),
+  // så porte, vægge-med-huller og lagermål gengives identisk i PNG-eksport, resultatside og PDF-rapport.
+  const savedCanvas = canvas, savedCtx = ctx, savedWrap = wrap;
+  const savedCamera = state.camera, savedShowGrid = state.showGrid, savedSelectedIds = state.selectedIds;
+
+  canvas = targetCanvas;
+  ctx = targetCanvas.getContext("2d");
+  wrap = { getBoundingClientRect: () => ({ width:targetCanvas.width, height:targetCanvas.height }) };
+  state.camera = { zoom: pxPerM/PPM, panX: pad*pxPerM, panY: pad*pxPerM };
+  state.showGrid = false;
+  state.selectedIds = [];
+
+  render();
+
+  canvas = savedCanvas; ctx = savedCtx; wrap = savedWrap;
+  state.camera = savedCamera; state.showGrid = savedShowGrid; state.selectedIds = savedSelectedIds;
+}
+
+/* =========================================================
+   17. RAPPORT (PRINT — 5 SIDER)
+   ========================================================= */
+
+function wrapPrPage(innerHtml, idx, total, extraStyle){
+  return `<div class="pr-page" ${extraStyle?('style="'+extraStyle+'"'):''}>${innerHtml}<div class="pr-footer"><span>LayoutScan Sales v1.0 · Nordic Operations</span><span>Side ${idx} / ${total}</span></div></div>`;
+}
+
+function buildPrintReportHtml(){
+  const c = project.customer, calc = computeCalculations();
+  const selections = getRackSelections();
+  const seriesSummary = selections.map(s=>s.seriesLabel).join(", ") || "—";
+  const manufacturerSummary = selections.length ? getManufacturerLabel(selections[0].manufacturer) : "—";
+  const statusSummary = selections.length ? getRackStatusLabel(selections[0].manufacturer) : "—";
+  const secondaryTrucks = getSecondaryTrucks();
+  const logo = project.report.logoDataUrl ? `<img src="${project.report.logoDataUrl}">` : "";
+  const snapCanvas = document.createElement("canvas");
+  drawSnapshotToCanvas(snapCanvas);
+  const imgData = snapCanvas.toDataURL("image/png");
+  const advisor = buildAdvisorPoints();
+  const risks = buildRiskAssessment();
+  const photos = project.photos || [];
+  const firstPhoto = photos[0];
+  const aiSummary = advisor.length ? (advisor[0] + " " + advisor[advisor.length-1]) : "";
+
+  const fragments = [];
+
+  // 1. FORSIDE
+  fragments.push(`
+    <div style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding-top:20mm;">
+      ${logo}
+      <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--text-mute); margin-top:18px;">Reoler A/S · Lagerdispositionsforslag</div>
+      <div style="font-size:28px; font-weight:800; color:var(--navy); margin-top:10px;">${escapeHtml(c.name||"Kundeprojekt")}</div>
+      <div style="font-size:13px; color:var(--text-mute); margin-top:8px;">${escapeHtml(c.address||"")}${c.zip?(", "+escapeHtml(c.zip)):""} ${escapeHtml(c.city||"")}</div>
+      <img src="${imgData}" style="width:78%; margin-top:24px; border:1px solid #D7DEE6; border-radius:8px;">
+      <div style="margin-top:22px; font-size:12px; color:var(--text-mute);">Projekt ${escapeHtml(c.projectNo||"—")} · ${c.projectDate||""} · Sælger: ${escapeHtml(project.report.seller||c.seller||"—")}</div>
+    </div>
+  `);
+
+  // 2. PROJEKTRESUMÉ
+  fragments.push(`
+    <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+    <div class="pr-h1">Projektresumé</div>
+    <div class="pr-grid2" style="font-size:12px; line-height:1.7;">
+      <div><b>Kundenavn:</b> ${escapeHtml(c.name||"—")}</div>
+      <div><b>Adresse:</b> ${escapeHtml(c.address||"—")}${c.zip?(", "+escapeHtml(c.zip)):""} ${escapeHtml(c.city||"")}</div>
+      <div><b>Dato:</b> ${c.projectDate||"—"}</div>
+      <div><b>Ansvarlig sælger:</b> ${escapeHtml(project.report.seller||c.seller||"—")}</div>
+      <div><b>Lagerstørrelse:</b> ${project.warehouse.length||"—"} × ${project.warehouse.width||"—"} m</div>
+      <div><b>Valgt truck:</b> ${escapeHtml(calc.truckName)}</div>
+      <div><b>Reoltyper:</b> ${escapeHtml(seriesSummary)}</div>
+      <div><b>Pallekapacitet:</b> ${calc.totalPallets} paller</div>
+      <div><b>Arealudnyttelse:</b> ${calc.utilization.toFixed(0)}%</div>
+      <div><b>Antal konflikter:</b> ${calc.conflicts}</div>
+    </div>
+    <div class="pr-h1" style="font-size:13.5px; margin-top:16px;">AI-sammenfatning <span style="font-size:9.5px; font-weight:600; color:var(--text-mute);">(regelbaseret)</span></div>
+    <p style="line-height:1.55; font-size:12px;">${escapeHtml(aiSummary)}</p>
+    ${firstPhoto ? `<img src="${firstPhoto.dataUrl}" style="width:100%; max-height:150px; object-fit:cover; border-radius:8px; margin-top:8px; border:1px solid #D7DEE6;">` : ``}
+  `);
+
+  // 3. LAYOUT
+  fragments.push(`
+    <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+    <div class="pr-h1">Layout</div>
+    <img src="${imgData}" style="width:100%; border:1px solid #D7DEE6; border-radius:6px;">
+    <div class="pr-sub" style="margin-top:8px;">Mål: ${project.warehouse.length} × ${project.warehouse.width} m · Fri højde: ${project.warehouse.height||"—"} m · Gangbredde: ${calc.aisle.toFixed(2)} m</div>
+  `);
+
+  // 4. NØGLETAL
+  fragments.push(`
+    <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+    <div class="pr-h1">Nøgletal</div>
+    <div class="pr-sub">Producent: ${escapeHtml(manufacturerSummary)} · Produktserier: ${escapeHtml(seriesSummary)} · Status: ${escapeHtml(statusSummary)}</div>
+    ${secondaryTrucks.length ? `<div class="pr-sub">Sekundære trucks: ${escapeHtml(secondaryTrucks.map(t=>t.name).join(", "))}</div>` : ``}
+    <div class="pr-grid2">
+      <div class="pr-kpi"><b>${calc.totalPallets}</b><span>Pallepladser</span></div>
+      <div class="pr-kpi"><b>${calc.totalBays}</b><span>Reolfag</span></div>
+      <div class="pr-kpi"><b>${(project.warehouse.length*project.warehouse.width).toFixed(0)} m²</b><span>Lagerareal</span></div>
+      <div class="pr-kpi"><b>${calc.utilization.toFixed(0)}%</b><span>Arealudnyttelse</span></div>
+      <div class="pr-kpi"><b>${escapeHtml(seriesSummary)}</b><span>Reolvalg</span></div>
+      <div class="pr-kpi"><b>${calc.truckName}</b><span>Primær truck</span></div>
+    </div>
+  `);
+
+  // 5. AI-VURDERING (rådgivning + risikovurdering — analyserer kun, flytter intet)
+  fragments.push(`
+    <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+    <div class="pr-h1">AI-vurdering <span style="font-size:10px; font-weight:600; color:var(--text-mute);">(regelbaseret analyse — ingen automatiske ændringer)</span></div>
+    <div class="pr-h1" style="font-size:13px; margin-top:8px;">AI Rådgiver</div>
+    ${advisor.map(p=>`<div style="font-size:12px; line-height:1.6;">• ${escapeHtml(p)}</div>`).join("")}
+    <div class="pr-h1" style="font-size:13px; margin-top:14px;">Risikovurdering</div>
+    ${risks.map(r=>`<div style="font-size:12px; line-height:1.6;">• ${escapeHtml(r)}</div>`).join("")}
+  `);
+
+  // 6. FOTOS (op til 6 pr. side)
+  if(photos.length){
+    const chunkSize = 6;
+    for(let i=0; i<photos.length; i+=chunkSize){
+      const chunk = photos.slice(i, i+chunkSize);
+      fragments.push(`
+        <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+        <div class="pr-h1">Fotos${photos.length>chunkSize?` (${i+1}–${Math.min(i+chunkSize,photos.length)} af ${photos.length})`:``}</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+          ${chunk.map(p => `
+            <div>
+              <img src="${p.dataUrl}" style="width:100%; height:32mm; object-fit:cover; border-radius:6px; border:1px solid #D7DEE6;">
+              <div style="font-size:10.5px; font-weight:700; color:var(--navy); margin-top:4px;">${escapeHtml(p.title||"Uden titel")}</div>
+              <div style="font-size:9px; color:var(--text-mute);">${escapeHtml(p.date||"")}${p.photographer?(" · "+escapeHtml(p.photographer)):""}</div>
+              ${p.comment ? `<div style="font-size:9.5px; color:var(--text); margin-top:2px;">${escapeHtml(p.comment)}</div>` : ``}
+            </div>
+          `).join("")}
+        </div>
+      `);
+    }
+  } else {
+    fragments.push(`
+      <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+      <div class="pr-h1">Fotos</div>
+      <div style="font-size:12px; color:var(--text-mute);">Ingen fotos er tilføjet til dette projekt endnu.</div>
+    `);
+  }
+
+  // 7. MATERIALELISTE
+  fragments.push(`
+    <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+    <div class="pr-h1">Materialeliste / foreløbig stykliste</div>
+    ${buildStyklisteHtml()}
+    <div class="pr-sub" style="margin-top:10px;">Foreløbig stykliste — skal teknisk verificeres.</div>
+  `);
+
+  // 8. NOTER, FORBEHOLD & KONTAKT
+  fragments.push(`
+    <div class="pr-headerbar"><div class="company">Reoler A/S</div>${logo}</div>
+    <div class="pr-h1">Noter & forbehold</div>
+    ${project.notes ? `<div class="pr-h1" style="font-size:13px;">Projektnoter</div><p style="line-height:1.6; font-size:12px; white-space:pre-wrap;">${escapeHtml(project.notes)}</p>` : ``}
+    <p style="line-height:1.6; font-size:12px;">Dette er et vejledende dispositionsforslag. Belastninger, montage, gulvforhold, brandsikkerhed og konstruktive krav skal godkendes af Reoler A/S før levering. ${calc.conflicts>0?("Der er registreret "+calc.conflicts+" forbehold/konflikter i layoutet, heraf "+calc.redConflicts+" kritiske."):"Der er ikke registreret konflikter i det aktuelle layout."}</p>
+    <div class="pr-h1" style="font-size:13px; margin-top:16px;">Kontakt</div>
+    <p style="font-size:12px;">Reoler A/S<br>Bakkegårdsvej 501, 3050 Humlebæk<br>Telefon: 49 19 21 22<br>Sælger: ${escapeHtml(project.report.seller||c.seller||"—")}</p>
+  `);
+
+  const total = fragments.length;
+  return fragments.map((frag, i) => wrapPrPage(frag, i+1, total)).join("");
+}
+
+function printReport(){
+  document.getElementById("printReport").innerHTML = buildPrintReportHtml();
+  window.print();
+}
+
+/* =========================================================
+   18. EKSPORT
+   ========================================================= */
+
+function downloadBlob(filename, content, mime){
+  const blob = new Blob([content], { type:mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function downloadDataUrl(filename, dataUrl){
+  const a = document.createElement("a");
+  a.href = dataUrl; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function csvEscape(v){
+  const s = String(v==null?"":v);
+  return /[",\r\n;]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function toCSV(rows){ return rows.map(r => r.map(csvEscape).join(";")).join("\r\n"); }
+function xmlEscape(v){ return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function exportPNG(){
+  const snap = document.createElement("canvas");
+  drawSnapshotToCanvas(snap);
+  downloadDataUrl("layoutscan_sales_layout.png", snap.toDataURL("image/png"));
+}
+function exportJSON(){
+  downloadBlob("layoutscan_sales_"+(project.customer.name||"projekt").replace(/[^a-z0-9]+/gi,"_")+".json", JSON.stringify({ layoutScanSales: project }, null, 2), "application/json");
+}
+function exportCSV(){
+  const rows = [["Producent","Reoltype","Antal rækker","Antal fag","Niveauer","Samlet reollængde (m)","Pallepladser","Status"]];
+  buildStykliste().forEach(r => rows.push([r.manufacturer, r.type, r.rows, r.bays, r.levels, r.totalLength.toFixed(1), r.capacity, r.status]));
+  downloadBlob("layoutscan_sales_stykliste.csv", toCSV(rows), "text/csv;charset=utf-8");
+}
+function exportExcel(){
+  // SpreadsheetML — genbrugt mønster fra LayoutScan Professional (ingen eksterne biblioteker)
+  const rows = buildStykliste();
+  const calc = computeCalculations();
+  const selections = getRackSelections();
+  const seriesSummary = selections.map(s=>s.seriesLabel).join(", ") || "—";
+  const manufacturerSummary = selections.length ? getManufacturerLabel(selections[0].manufacturer) : "—";
+  const statusSummary = selections.length ? getRackStatusLabel(selections[0].manufacturer) : "—";
+  const secondaryNames = getSecondaryTrucks().map(t=>t.name).join(", ") || "—";
+  function sheetRows(header, data){
+    return `<Row>${header.map(h=>`<Cell><Data ss:Type="String">${xmlEscape(h)}</Data></Cell>`).join("")}</Row>` +
+      data.map(r => `<Row>${r.map(c => `<Cell><Data ss:Type="${typeof c==='number'?'Number':'String'}">${xmlEscape(c)}</Data></Cell>`).join("")}</Row>`).join("");
+  }
+  const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Worksheet ss:Name="Nøgletal"><Table>
+${sheetRows(["Nøgletal","Værdi"], [["Producent",manufacturerSummary],["Produktserier",seriesSummary],["Status",statusSummary],["Pallepladser",calc.totalPallets],["Reolfag",calc.totalBays],["Arealudnyttelse (%)",calc.utilization.toFixed(1)],["Primær truck",calc.truckName],["Sekundære trucks",secondaryNames],["Gangbredde (m)",calc.aisle.toFixed(2)],["Konflikter",calc.conflicts]])}
+</Table></Worksheet>
+<Worksheet ss:Name="Stykliste"><Table>
+${sheetRows(["Producent","Reoltype","Antal rækker","Antal fag","Niveauer","Samlet reollængde (m)","Pallepladser","Status"], rows.map(r=>[r.manufacturer,r.type,r.rows,r.bays,r.levels,Number(r.totalLength.toFixed(1)),r.capacity,r.status]))}
+</Table></Worksheet>
+</Workbook>`;
+  downloadBlob("layoutscan_sales_export.xls", xml, "application/vnd.ms-excel");
+}
+function exportCAD(){
+  const rows = [["objekt_id","objekttype","produkt","producent","status","x_position_m","y_position_m","laengde_m","bredde_m","hoejde_m","rotation_grader","lag","kommentar"]];
+  project.objects.forEach(o => {
+    const isRack = o.kind==="rack";
+    rows.push([
+      o.id, isRack?"reol":o.type, o.label,
+      isRack ? (o.manufacturerLabel||getManufacturerLabel(o.manufacturer)) : "",
+      isRack ? (o.productStatus||getRackStatusLabel(o.manufacturer)) : "",
+      o.x.toFixed(3), o.y.toFixed(3), o.width.toFixed(3), o.depth.toFixed(3), (o.height||0).toFixed(3),
+      Math.round(o.rotation||0), isRack?"reoler":"bygning", ""
+    ]);
+  });
+  downloadBlob("layoutscan_sales_CAD_grundlag.csv", toCSV(rows), "text/csv;charset=utf-8");
+}
+
+/* =========================================================
+   REAL DXF-EKSPORT (ASCII DXF, AutoCAD-format R12) — AutoCAD-forberedelse
+   Ingen eksterne biblioteker: filen bygges som ren DXF-gruppekode-tekst.
+   Koordinater er 1:1 i meter ($INSUNITS=6). Y-aksen spejlvendes ved eksport
+   (dxfY = lagerbredde − internY), så nord vender opad i AutoCAD, ligesom i
+   LayoutScan Sales' egen tegneflade.
+   ========================================================= */
+
+const DXF_LAYERS = ["WALLS","PORTS","DOORS","RACKS","COLUMNS","ROOMS","FIRE","TEXT","DIMENSIONS"];
+
+function dxfNum(n){ return (Math.round(n*10000)/10000).toFixed(4); }
+
+// Spejlvender Y, så eksporten læses med nord opad i AutoCAD (se note ovenfor).
+function dxfPoint(xm, ym){
+  const W = project.warehouse.width || 0;
+  return { x: xm, y: (W - ym) };
+}
+
+// Beregner de fire hjørner af et (evt. roteret) objekt i interne verdenskoordinater —
+// samme rotationsmatematik som bruges til at tegne objektet på canvas.
+function rectCorners(obj){
+  const cx = obj.x + obj.width/2, cy = obj.y + obj.depth/2;
+  const rad = (obj.rotation||0) * Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
+  const hw = obj.width/2, hd = obj.depth/2;
+  return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([lx,ly]) => ({
+    x: cx + lx*cos - ly*sin, y: cy + lx*sin + ly*cos
+  }));
+}
+
+function dxfLayerFor(obj){
+  if(obj.autoWall) return "WALLS";
+  if(obj.kind === "rack") return "RACKS";
+  if(obj.type === "port") return "PORTS";
+  if(obj.type === "dor") return "DOORS";
+  if(obj.isColumn) return "COLUMNS";
+  if(obj.isLane || obj.isRestricted) return "FIRE";
+  return "ROOMS";
+}
+
+// Klassisk POLYLINE (VERTEX/SEQEND) — kompatibel med DXF R12, i modsætning til
+// LWPOLYLINE som kræver R13+. Giver Arne ét sammenhængende, flytbart objekt pr. reol/væg/rum.
+function dxfPolyline(layer, pointsWorld, closed){
+  let s = "0\nPOLYLINE\n8\n"+layer+"\n66\n1\n70\n"+(closed?1:0)+"\n";
+  pointsWorld.forEach(p => {
+    const dp = dxfPoint(p.x, p.y);
+    s += "0\nVERTEX\n8\n"+layer+"\n10\n"+dxfNum(dp.x)+"\n20\n"+dxfNum(dp.y)+"\n30\n0.0\n";
+  });
+  s += "0\nSEQEND\n";
+  return s;
+}
+function dxfLine(layer, x1,y1,x2,y2){
+  const a = dxfPoint(x1,y1), b = dxfPoint(x2,y2);
+  return "0\nLINE\n8\n"+layer+"\n10\n"+dxfNum(a.x)+"\n20\n"+dxfNum(a.y)+"\n30\n0.0\n11\n"+dxfNum(b.x)+"\n21\n"+dxfNum(b.y)+"\n31\n0.0\n";
+}
+function dxfText(layer, xm, ym, heightM, text){
+  const p = dxfPoint(xm, ym);
+  const safe = String(text).replace(/\r?\n/g," ").replace(/[\u0080-\uFFFF]/g, ch => ch); // AutoCAD håndterer UTF-8 i moderne versioner
+  return "0\nTEXT\n8\n"+layer+"\n10\n"+dxfNum(p.x)+"\n20\n"+dxfNum(p.y)+"\n30\n0.0\n40\n"+dxfNum(Math.max(heightM,0.08))+"\n1\n"+safe+"\n";
+}
+
+function buildDxf(){
+  let header = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n9\n$INSUNITS\n70\n6\n0\nENDSEC\n";
+
+  let tables = "0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n"+DXF_LAYERS.length+"\n";
+  DXF_LAYERS.forEach(l => { tables += "0\nLAYER\n2\n"+l+"\n70\n0\n62\n7\n6\nCONTINUOUS\n"; });
+  tables += "0\nENDTAB\n0\nENDSEC\n";
+
+  let entities = "0\nSECTION\n2\nENTITIES\n";
+  project.objects.forEach(obj => {
+    if(obj.visible === false) return;
+    const layer = dxfLayerFor(obj);
+    entities += dxfPolyline(layer, rectCorners(obj), true);
+    const cx = obj.x + obj.width/2, cy = obj.y + obj.depth/2;
+    const label = obj.kind === "rack" ? (obj.label + " " + obj.bays + " fag") : obj.label;
+    entities += dxfText("TEXT", cx, cy, Math.min(0.3, (obj.depth||1)*0.3), label);
+    if(obj.type === "port"){
+      entities += dxfText("TEXT", cx, cy - obj.depth/2 - 0.35, 0.25, "PORT " + obj.width.toFixed(1).replace(/\.0$/,"") + " m");
+    }
+  });
+
+  // Overordnede mål som simple lineære mål (linje + tekst) på DIMENSIONS-laget.
+  // Bemærk: dette er ikke parametriske AutoCAD-DIMENSION-objekter, men linjer og
+  // tekst med de korrekte, 1:1-målfaste værdier — se leveringsnoten.
+  const L = project.warehouse.length||0, W = project.warehouse.width||0;
+  if(L>0 && W>0){
+    entities += dxfLine("DIMENSIONS", 0,-1, L,-1);
+    entities += dxfText("DIMENSIONS", L/2, -1.6, 0.3, L.toFixed(2)+" m");
+    entities += dxfLine("DIMENSIONS", -1,0, -1,W);
+    entities += dxfText("DIMENSIONS", -2.1, W/2, 0.3, W.toFixed(2)+" m");
+  }
+  entities += "0\nENDSEC\n";
+
+  return header + tables + entities + "0\nEOF\n";
+}
+
+function exportDXF(){
+  if(!(project.warehouse.length>0 && project.warehouse.width>0)){
+    alert("Lagerets mål skal være angivet, før DXF kan eksporteres.");
+    return;
+  }
+  const dxf = buildDxf();
+  downloadBlob("layoutscan_sales_" + (project.customer.name||"projekt").replace(/[^a-z0-9]+/gi,"_") + ".dxf", dxf, "application/dxf");
+}
+
+/* =========================================================
+   19. GEM / ÅBN PROJEKT
+   ========================================================= */
+
+let saveTimer = null;
+function scheduleSave(){
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(project)); }catch(e){} }, 400);
+}
+function saveProjectLocal(toast){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(project)); if(toast) alert("Projekt gemt lokalt."); }catch(e){ if(toast) alert("Kunne ikke gemme projektet lokalt."); }
+}
+function loadProjectLocalIfAny(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return null;
+}
+function loadProjectFromObject(data){
+  const p = data.layoutScanSales || data;
+  project = Object.assign(defaultProject(), p);
+  window.project = project;
+  layoutScreenInited = false;
+  state.selectedIds = []; state.undoStack=[]; state.redoStack=[];
+  rackBrowseManufacturer = (project.rackSelections[0] && project.rackSelections[0].manufacturer) || "generic";
+}
+
+/* =========================================================
+   20. DEMOPROJEKT
+   ========================================================= */
+
+function loadDemoProject(){
+  project = defaultProject();
+  window.project = project;
+  project.customer = Object.assign(project.customer, {
+    name:"Demo Lager A/S", address:"Erhvervsvej 12", zip:"8500", city:"Grenaa",
+    contact:"Anna Jensen", phone:"86 12 34 56", email:"anna@demolager.dk",
+    seller:"Reoler A/S — demo", projectNo:"DEMO-2026", description:"Demoprojekt til fremvisning af LayoutScan Sales."
+  });
+  project.warehouse = { length:40, width:25, height:8 };
+  project.operation.truckId = "reachtruck";
+  project.operation.secondaryTruckIds = ["el_palleloefter"];
+  project.operation.palletType = "eur";
+  project.operation.desiredPalletSpaces = 1400;
+  project.operation.needsBuffer = true; project.operation.needsReceiving = true; project.operation.needsShipping = true;
+  const rDobbelt = genericRackOf("pallereol_dobbelt");
+  const rSmaa = genericRackOf("smaavarereol");
+  project.rackSelections = [
+    { id:newRackSelectionId(), manufacturer:"generic", type:rDobbelt.type, seriesLabel:rDobbelt.label, bayWidth:rDobbelt.bayWidth, depth:rDobbelt.depth, height:7, levels:4, palletsPerLevel:4, defaultBays:4 },
+    { id:newRackSelectionId(), manufacturer:"generic", type:rSmaa.type, seriesLabel:rSmaa.label, bayWidth:rSmaa.bayWidth, depth:rSmaa.depth, height:2.0, levels:5, palletsPerLevel:0, defaultBays:4 }
+  ];
+
+  generateBuildingFromDimensions();
+  // to porte
+  const portTd = nonRackTypeOf("port");
+  const p1 = createNonRackObject(portTd, 5, -0.15); p1.width=3; p1.depth=0.3; project.objects.push(p1);
+  const p2 = createNonRackObject(portTd, 30, -0.15); p2.width=3; p2.depth=0.3; project.objects.push(p2);
+  // fire søjler
+  const colTd = nonRackTypeOf("soejle");
+  [[10,8],[10,17],[28,8],[28,17]].forEach(([x,y]) => project.objects.push(createNonRackObject(colTd, x, y)));
+  // varemodtagelse / forsendelse / buffer
+  const vm = createNonRackObject(nonRackTypeOf("varemodtagelse"), 0.3, 0.3); project.objects.push(vm);
+  const fs = createNonRackObject(nonRackTypeOf("forsendelse"), 34.7, 0.3); project.objects.push(fs);
+  const buf = createNonRackObject(nonRackTypeOf("buffer"), 0.3, 21.5); project.objects.push(buf);
+
+  layoutScreenInited = false;
+  state.selectedIds = []; state.undoStack=[]; state.redoStack=[];
+  rackBrowseManufacturer = "generic";
+
+  goToStep(5);
+  computeLayoutProposal(PROPOSAL_TYPES.BALANCED);
+}
+
+/* =========================================================
+   21. INIT
+   ========================================================= */
+
+function wireStartScreen(){
+  document.getElementById("btnNewProject").addEventListener("click", () => {
+    project = defaultProject(); window.project = project; layoutScreenInited=false; state.selectedIds=[]; state.undoStack=[]; state.redoStack=[]; rackBrowseManufacturer="generic";
+    goToStep(1);
+  });
+  document.getElementById("btnOpenDemo").addEventListener("click", loadDemoProject);
+  document.getElementById("btnOpenProject").addEventListener("click", () => document.getElementById("fileOpenInput").click());
+  document.getElementById("fileOpenInput").addEventListener("change", e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{ loadProjectFromObject(JSON.parse(reader.result)); goToStep(project.step||1); }
+      catch(err){ alert("Kunne ikke læse projektfilen. Er det en gyldig LayoutScan Sales JSON-fil?"); }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function wireReportModal(){
+  document.getElementById("btnOpenReportModal").addEventListener("click", () => {
+    document.getElementById("reportModalBackdrop").classList.add("active");
+    document.getElementById("repSeller").value = project.report.seller || project.customer.seller || "";
+  });
+  document.getElementById("btnCloseReportModal").addEventListener("click", () => document.getElementById("reportModalBackdrop").classList.remove("active"));
+  document.getElementById("repSeller").addEventListener("input", e => { project.report.seller = e.target.value; scheduleSave(); });
+  document.getElementById("repLogoInput").addEventListener("change", e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { project.report.logoDataUrl = reader.result; scheduleSave(); };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("btnPrintReport").addEventListener("click", printReport);
+  document.getElementById("btnExportPNG").addEventListener("click", exportPNG);
+  document.getElementById("btnExportJSON").addEventListener("click", exportJSON);
+  document.getElementById("btnExportCSV").addEventListener("click", exportCSV);
+  document.getElementById("btnExportExcel").addEventListener("click", exportExcel);
+  document.getElementById("btnExportCAD").addEventListener("click", exportCAD);
+  document.getElementById("btnExportDXF").addEventListener("click", exportDXF);
+  document.getElementById("btnResultBackToLayout").addEventListener("click", () => goToStep(5));
+  document.getElementById("btnResultHome").addEventListener("click", () => { saveProjectLocal(); showStartScreen(); });
+}
+
+/* =========================================================
+   FOTODOKUMENTATION
+   ========================================================= */
+
+const PHOTO_QUICKPICKS = ["Facade","Port 1","Port 2","Varemodtagelse","Forsendelse","Søjler","El-tavler","Batterirum","Eksisterende reoler","Loft","Særlige forhold"];
+
+function newPhotoId(){ return "photo_" + Math.random().toString(36).slice(2,10); }
+
+function renderPhotoQuickpicks(){
+  const el = document.getElementById("photoQuickpicks");
+  if(!el) return;
+  el.innerHTML = PHOTO_QUICKPICKS.map(t => `<button type="button" class="photo-quickpick" data-quickpick="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join("");
+}
+
+function renderPhotoGrid(){
+  const grid = document.getElementById("photoGrid");
+  if(!grid) return;
+  const photos = project.photos || [];
+  grid.innerHTML = photos.map(p => `
+    <div class="photo-thumb" data-photo-id="${p.id}">
+      <img src="${p.dataUrl}" alt="${escapeHtml(p.title||"Foto")}">
+      <div class="photo-thumb-title">${escapeHtml(p.title || "Uden titel")}</div>
+    </div>
+  `).join("") + `<div class="photo-add-tile" id="photoAddTile"><div class="plus-ic">+</div><div>Tilføj foto</div></div>`;
+  document.getElementById("photoAddTile").addEventListener("click", () => document.getElementById("photoFileInput").click());
+  grid.querySelectorAll("[data-photo-id]").forEach(el => {
+    el.addEventListener("click", () => openPhotoLightbox(el.dataset.photoId));
+  });
+}
+
+function openPhotosModal(){
+  renderPhotoQuickpicks();
+  renderPhotoGrid();
+  document.getElementById("photosModalBackdrop").classList.add("active");
+}
+
+let pendingPhotoTitle = "";
+let currentLightboxPhotoId = null;
+
+function addPhotoFromFile(file, presetTitle){
+  const reader = new FileReader();
+  reader.onload = () => {
+    const photo = {
+      id:newPhotoId(), dataUrl:reader.result, title:presetTitle||"", comment:"",
+      date:new Date().toISOString().slice(0,10), photographer:project.customer.seller||""
+    };
+    project.photos = project.photos || [];
+    project.photos.push(photo);
+    scheduleSave();
+    renderPhotoGrid();
+  };
+  reader.readAsDataURL(file);
+}
+
+function openPhotoLightbox(id){
+  const photo = (project.photos||[]).find(p => p.id === id);
+  if(!photo) return;
+  currentLightboxPhotoId = id;
+  document.getElementById("photoLightboxImg").src = photo.dataUrl;
+  document.getElementById("photoTitleInput").value = photo.title || "";
+  document.getElementById("photoDateInput").value = photo.date || "";
+  document.getElementById("photoPhotographerInput").value = photo.photographer || "";
+  document.getElementById("photoCommentInput").value = photo.comment || "";
+  document.getElementById("photoLightboxBackdrop").classList.add("active");
+}
+
+function wirePhotosModal(){
+  ["btnOpenPhotosWiz","btnOpenPhotosLay","btnOpenPhotosRes"].forEach(id => {
+    const btn = document.getElementById(id);
+    if(btn) btn.addEventListener("click", openPhotosModal);
+  });
+  document.getElementById("btnClosePhotosModal").addEventListener("click", () => document.getElementById("photosModalBackdrop").classList.remove("active"));
+  document.getElementById("photoQuickpicks").addEventListener("click", e => {
+    const btn = e.target.closest("[data-quickpick]"); if(!btn) return;
+    pendingPhotoTitle = btn.dataset.quickpick;
+    document.getElementById("photoFileInput").click();
+  });
+  document.getElementById("photoFileInput").addEventListener("change", e => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(f => addPhotoFromFile(f, pendingPhotoTitle));
+    pendingPhotoTitle = "";
+    e.target.value = "";
+  });
+  document.getElementById("btnClosePhotoLightbox").addEventListener("click", () => document.getElementById("photoLightboxBackdrop").classList.remove("active"));
+  const bind = (id, key) => document.getElementById(id).addEventListener("input", e => {
+    const photo = (project.photos||[]).find(p => p.id === currentLightboxPhotoId);
+    if(!photo) return;
+    photo[key] = e.target.value;
+    scheduleSave();
+    renderPhotoGrid();
+  });
+  bind("photoTitleInput","title"); bind("photoDateInput","date"); bind("photoPhotographerInput","photographer"); bind("photoCommentInput","comment");
+  document.getElementById("btnDeletePhoto").addEventListener("click", () => {
+    project.photos = (project.photos||[]).filter(p => p.id !== currentLightboxPhotoId);
+    scheduleSave();
+    document.getElementById("photoLightboxBackdrop").classList.remove("active");
+    renderPhotoGrid();
+  });
+}
+
+/* =========================================================
+   AI-ANALYSE — regelbaseret rådgivning, kundespørgsmål og risikovurdering.
+   VIGTIGT: Analyserer kun. Flytter aldrig objekter, sender ingen data nogen steder —
+   al logik kører lokalt i browseren, samme princip som "Automatisk anbefaling".
+   ========================================================= */
+
+// 2. AI Layout Advisor — forklarer arealudnyttelse, reolvalg, truckvalg og gangbredder.
+function buildAdvisorPoints(){
+  const calc = computeCalculations();
+  const selections = getRackSelections();
+  const points = [];
+  points.push(`Lageret har en arealudnyttelse på ${calc.utilization.toFixed(0)}%.`);
+  if(calc.utilization < 40){
+    points.push(`Der er sandsynligvis plads til yderligere kapacitet — overvej flere reolrækker eller en tættere reoltype i de ledige zoner.`);
+  } else if(calc.utilization > 65){
+    points.push(`Arealudnyttelsen er høj — der er formentlig ikke meget ledig plads tilbage til flere reolrækker uden at gå på kompromis med gangbredder.`);
+  } else {
+    points.push(`Arealudnyttelsen vurderes balanceret i forhold til den valgte reolkombination og truck.`);
+  }
+  if(selections.length > 1){
+    points.push(`Layoutet kombinerer ${selections.length} reoltyper (${selections.map(s=>s.seriesLabel).join(", ")}) — det giver fleksibilitet, men kræver at driften kan håndtere flere ordreflows.`);
+  } else if(selections.length === 1){
+    points.push(`Kun én reoltype er aktiv (${selections[0].seriesLabel}). Overvej om en kombination — fx en mindre andel småvarereol eller grenreol — bedre matcher variationen i varesortimentet.`);
+  }
+  points.push(`${calc.truckName} er valgt med en anbefalet gangbredde på ${calc.aisle.toFixed(2)} m.`);
+  if(calc.conflicts === 0){
+    points.push(`Gangbredderne i det aktuelle layout overholder de valgte parametre — der er ikke fundet konflikter.`);
+  } else {
+    points.push(`${calc.conflicts} konflikt(er) er fundet — se konfliktpanelet på Layout-skærmen for detaljer og automatisk rettelse.`);
+  }
+  return points;
+}
+
+// 4. AI Risikovurdering — rent regelbaseret scanning af layoutet for opmærksomhedspunkter.
+function buildRiskAssessment(){
+  const calc = computeCalculations();
+  const w = project.warehouse;
+  const risks = [];
+  const receiving = project.objects.find(o => o.type === "varemodtagelse");
+  const shipping = project.objects.find(o => o.type === "forsendelse");
+  const buffer = project.objects.find(o => o.type === "buffer");
+  const racks = project.objects.filter(o => o.kind === "rack");
+
+  if(receiving){
+    const nearby = racks.filter(r => dist(r.x+r.width/2, r.y+r.depth/2, receiving.x+receiving.width/2, receiving.y+receiving.depth/2) < 3);
+    if(nearby.length > 2) risks.push("Mulig flaskehals ved varemodtagelsen — flere reolrækker ligger tæt på ind-/udleveringsområdet.");
+  }
+  if(w.length && w.width && racks.length){
+    const farthest = racks.reduce((max,r) => {
+      const d = Math.max(dist(r.x, r.y, 0, 0), dist(r.x, r.y, w.length, w.width));
+      return Math.max(max, d);
+    }, 0);
+    if(farthest > 60) risks.push(`Lang truckafstand — op til ca. ${farthest.toFixed(0)} m fra lagerets hjørne til den fjerneste reolrække.`);
+  }
+  if(calc.utilization > 70) risks.push("Begrænset ekspansionsmulighed — arealudnyttelsen er allerede høj, så fremtidig vækst kan kræve om- eller udbygning.");
+  const orientations = new Set(racks.map(r => Math.round((r.rotation||0)/90)*90 % 180));
+  if(orientations.size > 1) risks.push("Reolrækker med flere forskellige orienteringer kan give krydsende truckruter — overvej en mere ensrettet rækkefølge.");
+  if(!buffer && project.operation.needsBuffer) risks.push("Der er markeret behov for et bufferområde i Trin 3, men intet bufferområde er placeret på tegningen endnu.");
+  if(buffer && (buffer.width*buffer.depth) < 6) risks.push("Det placerede bufferområde er småt i forhold til et typisk behov — overvej om det er tilstrækkeligt til driften.");
+  if(!risks.length) risks.push("Der er ikke fundet oplagte risikopunkter i det aktuelle layout ud fra de regelbaserede tjek.");
+  return risks;
+}
+
+// 3. AI Kundespørgsmål — foreslåede spørgsmål, delvist tilpasset projektets data.
+function buildCustomerQuestions(){
+  const qs = [];
+  qs.push("Forventer I vækst de næste 5 år?");
+  qs.push("Hvor mange paller håndteres dagligt?");
+  if(project.operation.storageMode === "pluk") qs.push("Skal der plukkes manuelt, eller er der plukstøtte i dag?");
+  else qs.push("Skal der plukkes manuelt?");
+  qs.push("Hvilke varer roterer hurtigst?");
+  qs.push("Er der planer om automatisering?");
+  if(!(project.operation.secondaryTruckIds||[]).some(id => id==="agv"||id==="amr")){
+    qs.push("Kommer der AGV eller AMR senere?");
+  }
+  qs.push("Har I krav til brandsikring?");
+  qs.push("Skal lageret kunne udvides?");
+  return qs;
+}
+
+function renderAIModal(){
+  const body = document.getElementById("aiModalBody");
+  const advisor = buildAdvisorPoints();
+  const questions = buildCustomerQuestions();
+  const risks = buildRiskAssessment();
+  body.innerHTML = `
+    <div class="ai-section">
+      <div class="ai-section-title">💡 AI Rådgiver <span class="ai-badge">Analyserer kun — flytter intet</span></div>
+      ${advisor.map(p => `<div class="ai-point"><div class="dot"></div><div>${escapeHtml(p)}</div></div>`).join("")}
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">💬 Spørgsmål til kunden</div>
+      <div class="ai-question-list">${questions.map(q => `<div class="ai-question">${escapeHtml(q)}</div>`).join("")}</div>
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">⚠ Risikovurdering</div>
+      ${risks.map(r => `<div class="ai-point risk"><div class="dot"></div><div>${escapeHtml(r)}</div></div>`).join("")}
+    </div>
+  `;
+}
+
+function wireAIModal(){
+  ["btnOpenAIWiz","btnOpenAILay","btnOpenAIRes"].forEach(id => {
+    const btn = document.getElementById(id);
+    if(btn) btn.addEventListener("click", () => { renderAIModal(); document.getElementById("aiModalBackdrop").classList.add("active"); });
+  });
+  document.getElementById("btnCloseAIModal").addEventListener("click", () => document.getElementById("aiModalBackdrop").classList.remove("active"));
+}
+
+/* =========================================================
+   PROJEKTNOTER
+   ========================================================= */
+
+function wireNotesModal(){
+  const btn = document.getElementById("btnOpenNotesWiz");
+  if(btn) btn.addEventListener("click", () => {
+    document.getElementById("notesTextarea").value = project.notes || "";
+    document.getElementById("notesModalBackdrop").classList.add("active");
+  });
+  document.getElementById("btnCloseNotesModal").addEventListener("click", () => document.getElementById("notesModalBackdrop").classList.remove("active"));
+  document.getElementById("notesTextarea").addEventListener("input", e => { project.notes = e.target.value; scheduleSave(); });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  wireStartScreen();
+  wireWizardNav();
+  wireReportModal();
+  wirePhotosModal();
+  wireAIModal();
+  wireNotesModal();
+  showStartScreen();
+});
+</script>
+</body>
+</html>
